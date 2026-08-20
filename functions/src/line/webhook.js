@@ -1,0 +1,53 @@
+const express = require("express");
+const { client, lineSignatureMiddleware } = require("./client");
+const { welcomeMessage, unknownCommandMessage } = require("./messages");
+const { userDoc } = require("../services/firestore");
+
+const router = express.Router();
+
+router.post("/", lineSignatureMiddleware, async (req, res) => {
+  try {
+    await Promise.all(req.body.events.map(handleEvent));
+    res.status(200).end();
+  } catch (err) {
+    console.error("webhook error", err);
+    res.status(500).end();
+  }
+});
+
+async function handleEvent(event) {
+  const userId = event.source && event.source.userId;
+  if (!userId) return;
+
+  if (event.type === "follow") {
+    await upsertUserProfile(userId);
+    return client.replyMessage({ replyToken: event.replyToken, messages: [welcomeMessage()] });
+  }
+
+  if (event.type === "message" && event.message.type === "text") {
+    const text = event.message.text.trim();
+    if (text === "เมนู" || text.toLowerCase() === "menu") {
+      return client.replyMessage({ replyToken: event.replyToken, messages: [welcomeMessage()] });
+    }
+    return client.replyMessage({ replyToken: event.replyToken, messages: [unknownCommandMessage()] });
+  }
+}
+
+async function upsertUserProfile(userId) {
+  let profile = {};
+  try {
+    profile = await client.getProfile(userId);
+  } catch (err) {
+    console.warn("could not fetch profile", err.message);
+  }
+  await userDoc(userId).set(
+    {
+      displayName: profile.displayName || null,
+      pictureUrl: profile.pictureUrl || null,
+      updatedAt: new Date().toISOString(),
+    },
+    { merge: true }
+  );
+}
+
+module.exports = router;

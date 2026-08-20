@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.local
+functions/.env
+functions/.env.*
+!functions/.env.example
+liff/.env
+liff/.env.*
+!liff/.env.example
+liff/dist/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+.firebase/
