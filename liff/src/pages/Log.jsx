@@ -28,10 +28,8 @@ export default function Log({ logs, reload }) {
       await api.createLog({
         exerciseType: fd.get("exerciseType"),
         date: fd.get("date"),
-        durationMin: fd.get("durationMin") ? Number(fd.get("durationMin")) : null,
         sets: fd.get("sets") ? Number(fd.get("sets")) : null,
         reps: fd.get("reps") ? Number(fd.get("reps")) : null,
-        weightKg: fd.get("weightKg") ? Number(fd.get("weightKg")) : null,
         note: fd.get("note") || null,
       });
       form.reset();
@@ -66,10 +64,8 @@ export default function Log({ logs, reload }) {
       await api.updateLog(id, {
         exerciseType: fd.get("exerciseType"),
         date: fd.get("date"),
-        durationMin: fd.get("durationMin") ? Number(fd.get("durationMin")) : null,
         sets: fd.get("sets") ? Number(fd.get("sets")) : null,
         reps: fd.get("reps") ? Number(fd.get("reps")) : null,
-        weightKg: fd.get("weightKg") ? Number(fd.get("weightKg")) : null,
         note: fd.get("note") || null,
       });
       setEditingId(null);
@@ -138,14 +134,10 @@ export default function Log({ logs, reload }) {
         <form className="card" onSubmit={handleSubmit}>
           <span className="card-eyebrow">{t("logEyebrow")}</span>
           <input name="exerciseType" placeholder={t("logTypePlaceholder")} required autoFocus />
-          <div className="row">
-            <input name="date" type="date" defaultValue={today} required />
-            <input name="durationMin" type="number" placeholder={t("minutesPlaceholder")} />
-          </div>
+          <input name="date" type="date" defaultValue={today} required />
           <div className="row">
             <input name="sets" type="number" placeholder={t("setsPlaceholder")} />
             <input name="reps" type="number" placeholder={t("repsPlaceholder")} />
-            <input name="weightKg" type="number" step="0.5" placeholder={t("weightPlaceholder")} />
           </div>
           <textarea name="note" placeholder={t("notePlaceholder")} rows="2" />
           <div className="row">
@@ -180,14 +172,10 @@ export default function Log({ logs, reload }) {
             return (
               <form key={l.id} className="card" onSubmit={(e) => handleEditSubmit(e, l.id)}>
                 <input name="exerciseType" defaultValue={l.exerciseType} placeholder={t("logTypePlaceholder")} required />
-                <div className="row">
-                  <input name="date" type="date" defaultValue={l.date} required />
-                  <input name="durationMin" type="number" defaultValue={l.durationMin ?? ""} placeholder={t("minutesPlaceholder")} />
-                </div>
+                <input name="date" type="date" defaultValue={l.date} required />
                 <div className="row">
                   <input name="sets" type="number" defaultValue={l.sets ?? ""} placeholder={t("setsPlaceholder")} />
                   <input name="reps" type="number" defaultValue={l.reps ?? ""} placeholder={t("repsPlaceholder")} />
-                  <input name="weightKg" type="number" step="0.5" defaultValue={l.weightKg ?? ""} placeholder={t("weightPlaceholder")} />
                 </div>
                 <textarea name="note" defaultValue={l.note ?? ""} placeholder={t("notePlaceholder")} rows="2" />
                 <div className="row">
