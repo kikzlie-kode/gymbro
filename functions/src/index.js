@@ -7,6 +7,9 @@ const webhookRouter = require("./line/webhook");
 const { requireLineAuth } = require("./routes/auth");
 const todosRouter = require("./routes/todos");
 const logsRouter = require("./routes/logs");
+const mealsRouter = require("./routes/meals");
+const profileRouter = require("./routes/profile");
+const presetsRouter = require("./routes/presets");
 const summaryRouter = require("./routes/summary");
 const { sendReminders } = require("./scheduler/reminders");
 
@@ -37,6 +40,9 @@ apiApp.use(requireLineAuth);
 // function without stripping the "/api" prefix, so routes must mount there.
 apiApp.use("/api/todos", todosRouter);
 apiApp.use("/api/logs", logsRouter);
+apiApp.use("/api/meals", mealsRouter);
+apiApp.use("/api/profile", profileRouter);
+apiApp.use("/api/presets", presetsRouter);
 apiApp.use("/api/summary", summaryRouter);
 exports.api = onRequest({ region: "asia-southeast1", secrets: [LIFF_CHANNEL_ID] }, apiApp);
 

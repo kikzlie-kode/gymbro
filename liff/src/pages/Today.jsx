@@ -1,93 +1,350 @@
+import { Fragment, useState } from "react";
 import { api } from "../api/client.js";
-import { useLoad } from "../hooks/useLoad.js";
+import { useSettings, EXERCISE_TYPES, BUILT_IN_SET_EXERCISES } from "../i18n.jsx";
 
 const today = new Date().toISOString().slice(0, 10);
+const BUILT_IN_SETS = ["HIIT", "Cardio", "Weight Training"];
+const EMPTY_SET = new Set();
 
-export default function Today() {
-  const { data: todos, error, reload } = useLoad(() => api.getTodos(today), []);
+export default function Today({ todos, reload, reloadLogs, reloadSummary, customPresets, reloadPresets }) {
+  const [titleMode, setTitleModeRaw] = useState("manual"); // manual | set
+  const [submitting, setSubmitting] = useState(false);
+  const [busyIds, setBusyIds] = useState(() => new Set());
+
+  const [setChoice, setSetChoice] = useState("");
+  const [showCustomBox, setShowCustomBox] = useState(false);
+  const [newSetName, setNewSetName] = useState("");
+  const [newSetType, setNewSetType] = useState("");
+  const [creatingSet, setCreatingSet] = useState(false);
+
+  const [expandedIds, setExpandedIds] = useState(() => new Set());
+  const [exerciseDone, setExerciseDone] = useState({}); // { [todoId]: Set(exerciseIndex) }
+
+  const { t, lang } = useSettings();
+
+  function setTitleMode(mode) {
+    setTitleModeRaw(mode);
+    setSetChoice("");
+    setShowCustomBox(false);
+    setNewSetName("");
+    setNewSetType("");
+  }
+
+  function handleSetChoiceChange(value) {
+    setSetChoice(value);
+    setShowCustomBox(value === "__custom__");
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const fd = new FormData(e.target);
-    await api.createTodo({
-      title: fd.get("title"),
-      exerciseType: fd.get("exerciseType") || null,
-      scheduledDate: today,
-      scheduledTime: fd.get("scheduledTime") || null,
-      reminderEnabled: fd.get("reminderEnabled") === "on",
+    if (submitting) return;
+
+    let title, exerciseType;
+    if (titleMode === "manual") {
+      const fd = new FormData(e.target);
+      title = fd.get("title");
+      exerciseType = fd.get("exerciseType") || null;
+    } else {
+      if (!setChoice || setChoice === "__custom__") return;
+      if (BUILT_IN_SETS.includes(setChoice)) {
+        title = setChoice;
+        exerciseType = setChoice;
+      } else {
+        const preset = customPresets.find((p) => p.id === setChoice);
+        if (!preset) return;
+        title = preset.name;
+        exerciseType = preset.exerciseType || null;
+      }
+    }
+
+    setSubmitting(true);
+    try {
+      await api.createTodo({ title, exerciseType, scheduledDate: today });
+      e.target.reset();
+      setTitleMode("manual");
+      reload();
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function withBusy(id, fn) {
+    if (busyIds.has(id)) return;
+    setBusyIds((prev) => new Set(prev).add(id));
+    try {
+      await fn();
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
+  function complete(todo) {
+    return withBusy(todo.id, async () => {
+      const isSet = BUILT_IN_SETS.includes(todo.title);
+      const done = exerciseDone[todo.id] || EMPTY_SET;
+      const exercises = isSet
+        ? BUILT_IN_SET_EXERCISES[todo.title][lang].map((ex, i) => ({
+            name: ex.name,
+            sets: ex.sets,
+            reps: ex.reps,
+            kcal: ex.kcal,
+            done: done.has(i),
+          }))
+        : undefined;
+
+      await api.createLog({
+        todoId: todo.id,
+        exerciseType: todo.exerciseType || todo.title,
+        date: today,
+        note: todo.exerciseType ? todo.title : null,
+        exercises,
+      });
+      await api.deleteTodo(todo.id);
+      reload();
+      reloadLogs();
+      reloadSummary();
     });
-    e.target.reset();
-    reload();
   }
 
-  async function toggleDone(todo) {
-    await api.updateTodo(todo.id, { status: todo.status === "done" ? "pending" : "done" });
-    reload();
+  function remove(id) {
+    return withBusy(id, async () => {
+      await api.deleteTodo(id);
+      reload();
+    });
   }
 
-  async function remove(id) {
-    await api.deleteTodo(id);
-    reload();
+  async function createCustomSet() {
+    const name = newSetName.trim();
+    if (!name || creatingSet) return;
+    setCreatingSet(true);
+    try {
+      const created = await api.createPreset(name, newSetType || null);
+      await reloadPresets();
+      setSetChoice(created.id);
+      setShowCustomBox(false);
+      setNewSetName("");
+      setNewSetType("");
+    } finally {
+      setCreatingSet(false);
+    }
   }
 
-  if (error) {
-    return (
-      <div className="empty">
-        โหลดข้อมูลไม่สำเร็จ: {error}
-        <div>
-          <button className="ghost" onClick={reload} style={{ marginTop: 8 }}>
-            ลองใหม่
-          </button>
-        </div>
-      </div>
-    );
+  function cancelCustomBox() {
+    setShowCustomBox(false);
+    setSetChoice("");
   }
-  if (todos === null) return <div className="empty">กำลังโหลด...</div>;
 
-  const sorted = [...todos].sort((a, b) => (a.scheduledTime || "").localeCompare(b.scheduledTime || ""));
+  function toggleExpanded(id) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleExerciseDone(todoId, index) {
+    setExerciseDone((prev) => {
+      const current = new Set(prev[todoId] || []);
+      current.has(index) ? current.delete(index) : current.add(index);
+      return { ...prev, [todoId]: current };
+    });
+  }
 
   return (
     <>
       <form className="card" onSubmit={handleSubmit}>
-        <label>กิจกรรมวันนี้</label>
-        <input name="title" placeholder="เช่น วิ่ง 5 กม." required />
-        <div className="row">
-          <input name="exerciseType" placeholder="ประเภท (cardio, weight...)" />
-          <input name="scheduledTime" type="time" style={{ maxWidth: 120 }} />
+        <span className="card-eyebrow">{t("todayEyebrow")}</span>
+
+        <div className="seg">
+          <button
+            type="button"
+            className={titleMode === "manual" ? "active" : ""}
+            onClick={() => setTitleMode("manual")}
+          >
+            {t("modeManual")}
+          </button>
+          <button
+            type="button"
+            className={titleMode === "set" ? "active" : ""}
+            onClick={() => setTitleMode("set")}
+          >
+            {t("modePreset")}
+          </button>
         </div>
-        <label className="row" style={{ gap: 6, marginBottom: 8 }}>
-          <input type="checkbox" name="reminderEnabled" style={{ width: "auto" }} defaultChecked />
-          แจ้งเตือนเมื่อถึงเวลา
-        </label>
-        <button className="primary" type="submit" style={{ width: "100%" }}>
-          + เพิ่มรายการ
+
+        {titleMode === "manual" ? (
+          <>
+            <input name="title" placeholder={t("titlePlaceholder")} required />
+            <select name="exerciseType" defaultValue="">
+              <option value="">{t("typeEmpty")}</option>
+              {EXERCISE_TYPES.map((et) => (
+                <option key={et} value={et}>
+                  {et}
+                </option>
+              ))}
+            </select>
+          </>
+        ) : (
+          <>
+            {showCustomBox ? (
+              <>
+                <input
+                  value={newSetName}
+                  onChange={(e) => setNewSetName(e.target.value)}
+                  placeholder={t("newSetNamePlaceholder")}
+                  autoFocus
+                />
+                <input
+                  value={newSetType}
+                  onChange={(e) => setNewSetType(e.target.value)}
+                  placeholder={t("typeEmpty")}
+                />
+                <div className="row" style={{ marginBottom: 8 }}>
+                  <button
+                    type="button"
+                    className="primary"
+                    style={{ flex: 1 }}
+                    onClick={createCustomSet}
+                    disabled={!newSetName.trim() || creatingSet}
+                  >
+                    {t("createSetBtn")}
+                  </button>
+                  <button type="button" className="ghost" onClick={cancelCustomBox}>
+                    {t("cancel")}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <select
+                  value={setChoice}
+                  onChange={(e) => handleSetChoiceChange(e.target.value)}
+                  required
+                >
+                  <option value="" disabled>
+                    {t("setPlaceholder")}
+                  </option>
+                  {BUILT_IN_SETS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                  {customPresets.length > 0 && (
+                    <optgroup label={t("presetCustom")}>
+                      {customPresets.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  <option value="__custom__">{t("addCustomOption")}</option>
+                </select>
+
+                {BUILT_IN_SETS.includes(setChoice) && (
+                  <div className="set-detail">
+                    <span className="card-eyebrow">{setChoice}</span>
+                    <div className="exercise-table no-check">
+                      <div className="col-head">{t("exNameHead")}</div>
+                      <div className="col-head">{t("exRepsHead")}</div>
+                      <div className="col-head">{t("exSetsHead")}</div>
+                      {BUILT_IN_SET_EXERCISES[setChoice][lang].map((ex) => (
+                        <Fragment key={ex.name}>
+                          <span>{ex.name}</span>
+                          <span>{ex.reps}</span>
+                          <span>{ex.sets}</span>
+                        </Fragment>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        <button className="primary" type="submit" style={{ width: "100%" }} disabled={submitting}>
+          {t("addTodo")}
         </button>
       </form>
 
-      {sorted.length === 0 ? (
-        <div className="empty">วันนี้ยังไม่มีตารางออกกำลังกาย</div>
+      {todos.length === 0 ? (
+        <div className="empty">{t("emptyToday")}</div>
       ) : (
-        sorted.map((t) => (
-          <div key={t.id} className={`card ${t.status === "done" ? "done" : ""}`}>
-            <div className="row between">
-              <div>
-                <div className="card-title">{t.title}</div>
-                <div className="card-meta">
-                  {t.scheduledTime ? `${t.scheduledTime} · ` : ""}
-                  {t.exerciseType || ""}
+        todos.map((td) => {
+          const isSet = BUILT_IN_SETS.includes(td.title);
+          const exercises = isSet ? BUILT_IN_SET_EXERCISES[td.title][lang] : null;
+          const doneSet = exerciseDone[td.id] || EMPTY_SET;
+          const expanded = expandedIds.has(td.id);
+          const totalKcal = isSet
+            ? exercises.reduce((sum, ex, i) => sum + (doneSet.has(i) ? ex.kcal : 0), 0)
+            : 0;
+
+          return (
+            <div key={td.id} className="card">
+              <div
+                className="row between"
+                onClick={isSet ? () => toggleExpanded(td.id) : undefined}
+                style={isSet ? { cursor: "pointer" } : undefined}
+              >
+                <div>
+                  <div className="card-title">
+                    {td.title}
+                    {isSet && <span className="expand-caret">{expanded ? "▲" : "▼"}</span>}
+                  </div>
+                  <div className="card-meta">
+                    {isSet ? `${doneSet.size}/${exercises.length} · ${totalKcal} kcal` : td.exerciseType || ""}
+                  </div>
+                </div>
+                <div className="row" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    className="plate"
+                    onClick={() => complete(td)}
+                    disabled={busyIds.has(td.id)}
+                    aria-label={t("markDone")}
+                  >
+                    ✓
+                  </button>
+                  <button
+                    className="icon-btn"
+                    onClick={() => remove(td.id)}
+                    disabled={busyIds.has(td.id)}
+                    aria-label={t("delete")}
+                  >
+                    ✕
+                  </button>
                 </div>
               </div>
-              <div className="row">
-                <button className="ghost" onClick={() => toggleDone(t)}>
-                  {t.status === "done" ? "↺" : "✓"}
-                </button>
-                <button className="ghost" onClick={() => remove(t.id)}>
-                  ✕
-                </button>
-              </div>
+
+              {isSet && expanded && (
+                <div className="exercise-table">
+                  <div className="col-head"></div>
+                  <div className="col-head">{t("exNameHead")}</div>
+                  <div className="col-head">{t("exRepsHead")}</div>
+                  <div className="col-head">{t("exSetsHead")}</div>
+                  {exercises.map((ex, i) => (
+                    <Fragment key={ex.name}>
+                      <button
+                        className={`plate small ${doneSet.has(i) ? "done" : ""}`}
+                        onClick={() => toggleExerciseDone(td.id, i)}
+                        aria-label={t("markDone")}
+                      >
+                        ✓
+                      </button>
+                      <span className={doneSet.has(i) ? "done-text" : ""}>{ex.name}</span>
+                      <span>{ex.reps}</span>
+                      <span>{ex.sets}</span>
+                    </Fragment>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        ))
+          );
+        })
       )}
     </>
   );

@@ -29,7 +29,20 @@ export const api = {
 
   getLogs: (from, to) => request(`/logs?${new URLSearchParams({ ...(from && { from }), ...(to && { to }) })}`),
   createLog: (log) => request("/logs", { method: "POST", body: JSON.stringify(log) }),
+  updateLog: (id, updates) => request(`/logs/${id}`, { method: "PATCH", body: JSON.stringify(updates) }),
   deleteLog: (id) => request(`/logs/${id}`, { method: "DELETE" }),
+
+  getMeals: (from, to) => request(`/meals?${new URLSearchParams({ ...(from && { from }), ...(to && { to }) })}`),
+  createMeal: (meal) => request("/meals", { method: "POST", body: JSON.stringify(meal) }),
+  deleteMeal: (id) => request(`/meals/${id}`, { method: "DELETE" }),
+
+  getProfile: () => request("/profile"),
+  saveProfile: (profile) => request("/profile", { method: "PUT", body: JSON.stringify(profile) }),
+
+  getPresets: () => request("/presets"),
+  createPreset: (name, exerciseType) =>
+    request("/presets", { method: "POST", body: JSON.stringify({ name, exerciseType }) }),
+  deletePreset: (id) => request(`/presets/${id}`, { method: "DELETE" }),
 
   getSummary: (days = 30) => request(`/summary?days=${days}`),
 };

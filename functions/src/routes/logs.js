@@ -15,7 +15,7 @@ router.get("/", async (req, res) => {
 
 // POST /api/logs
 router.post("/", async (req, res) => {
-  const { todoId, exerciseType, date, durationMin, sets, reps, weightKg, note } = req.body;
+  const { todoId, exerciseType, date, durationMin, sets, reps, weightKg, note, exercises } = req.body;
 
   if (!exerciseType || !date) {
     return res.status(400).json({ error: "exerciseType_and_date_required" });
@@ -30,6 +30,7 @@ router.post("/", async (req, res) => {
     reps: reps ?? null,
     weightKg: weightKg ?? null,
     note: note || null,
+    exercises: Array.isArray(exercises) ? exercises : null,
     createdAt: new Date().toISOString(),
   };
 
@@ -40,6 +41,19 @@ router.post("/", async (req, res) => {
   }
 
   res.status(201).json({ id: ref.id, ...doc });
+});
+
+// PATCH /api/logs/:id
+router.patch("/:id", async (req, res) => {
+  const allowed = ["exerciseType", "date", "durationMin", "sets", "reps", "weightKg", "note", "exercises"];
+  const updates = {};
+  for (const key of allowed) {
+    if (key in req.body) updates[key] = req.body[key];
+  }
+  updates.updatedAt = new Date().toISOString();
+
+  await logsCol(req.userId).doc(req.params.id).set(updates, { merge: true });
+  res.json({ id: req.params.id, ...updates });
 });
 
 // DELETE /api/logs/:id

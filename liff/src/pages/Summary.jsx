@@ -1,34 +1,19 @@
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip } from "chart.js";
-import { api } from "../api/client.js";
-import { useLoad } from "../hooks/useLoad.js";
+import { useSettings } from "../i18n.jsx";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
 
-export default function Summary() {
-  const { data: summary, error, reload } = useLoad(() => api.getSummary(30), []);
-
-  if (error) {
-    return (
-      <div className="empty">
-        โหลดข้อมูลไม่สำเร็จ: {error}
-        <div>
-          <button className="ghost" onClick={reload} style={{ marginTop: 8 }}>
-            ลองใหม่
-          </button>
-        </div>
-      </div>
-    );
-  }
-  if (summary === null) return <div className="empty">กำลังโหลด...</div>;
+export default function Summary({ summary }) {
+  const { t, theme } = useSettings();
 
   const data = {
     labels: summary.series.map((s) => s.date.slice(5)),
     datasets: [
       {
-        label: "นาทีที่ออกกำลังกาย",
+        label: t("durationMinutes"),
         data: summary.series.map((s) => s.totalDurationMin),
-        backgroundColor: "#06c755",
+        backgroundColor: theme === "dark" ? "#ffc400" : "#ff7a00",
         borderRadius: 4,
       },
     ],
@@ -45,14 +30,17 @@ export default function Summary() {
       <div className="stat-row">
         <div className="stat">
           <div className="num">{summary.streak}</div>
-          <div className="label">วันติดต่อกัน</div>
+          <div className="label">{t("streakLabel")}</div>
         </div>
         <div className="stat">
           <div className="num">{summary.totalSessions}</div>
-          <div className="label">ครั้งใน {summary.days} วัน</div>
+          <div className="label">{t("sessionsLabel", { days: summary.days })}</div>
         </div>
       </div>
       <div className="card">
+        <span className="card-eyebrow">
+          {t("last")} {summary.days} {t("days")}
+        </span>
         <Bar data={data} options={options} height={220} />
       </div>
     </>
