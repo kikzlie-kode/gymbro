@@ -1,7 +1,0 @@
-{
-  "buildCommand": "cd liff && npm install && npm run build",
-  "outputDirectory": "liff/dist",
-  "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ]
-}
