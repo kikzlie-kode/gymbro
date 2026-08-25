@@ -18,6 +18,21 @@ export default function Log({ logs, reload }) {
 
   const { t } = useSettings();
 
+  // Get unique Sets values from past logs + BUILT_IN_SET_EXERCISES
+  const uniqueSetsOptions = () => {
+    const setsSet = new Set();
+    
+    // Add from past logs
+    logs.forEach((l) => {
+      if (l.sets) setsSet.add(l.sets);
+    });
+    
+    // Add common preset values (1, 3, 4, 5)
+    [1, 3, 4, 5].forEach((s) => setsSet.add(s));
+    
+    return Array.from(setsSet).sort((a, b) => a - b);
+  };
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (submitting) return;
@@ -136,7 +151,14 @@ export default function Log({ logs, reload }) {
           <input name="exerciseType" placeholder={t("logTypePlaceholder")} required autoFocus />
           <input name="date" type="date" defaultValue={today} required />
           <div className="row">
-            <input name="sets" type="number" placeholder={t("setsPlaceholder")} />
+            <select name="sets" defaultValue="">
+              <option value="">{t("setsPlaceholder")}</option>
+              {uniqueSetsOptions().map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
             <input name="reps" type="number" placeholder={t("repsPlaceholder")} />
           </div>
           <textarea name="note" placeholder={t("notePlaceholder")} rows="2" />
@@ -174,7 +196,14 @@ export default function Log({ logs, reload }) {
                 <input name="exerciseType" defaultValue={l.exerciseType} placeholder={t("logTypePlaceholder")} required />
                 <input name="date" type="date" defaultValue={l.date} required />
                 <div className="row">
-                  <input name="sets" type="number" defaultValue={l.sets ?? ""} placeholder={t("setsPlaceholder")} />
+                  <select name="sets" defaultValue={l.sets ?? ""}>
+                    <option value="">{t("setsPlaceholder")}</option>
+                    {uniqueSetsOptions().map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
                   <input name="reps" type="number" defaultValue={l.reps ?? ""} placeholder={t("repsPlaceholder")} />
                 </div>
                 <textarea name="note" defaultValue={l.note ?? ""} placeholder={t("notePlaceholder")} rows="2" />
