@@ -1,0 +1,16 @@
+{
+  "name": "gymbro-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GymBro LINE bot + LIFF API backend (Vercel serverless functions)",
+  "engines": {
+    "node": "20.x"
+  },
+  "dependencies": {
+    "@line/bot-sdk": "^9.4.2",
+    "@supabase/supabase-js": "^2.45.4",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "serverless-http": "^3.2.0"
+  }
+}
