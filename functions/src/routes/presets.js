@@ -11,8 +11,11 @@ router.get("/", async (req, res) => {
 
 // POST /api/presets
 router.post("/", async (req, res) => {
-  const { name, exerciseType } = req.body;
-
+  const {
+    name,
+    exerciseType,
+    exercises
+  } = req.body;
   if (!name || !name.trim()) {
     return res.status(400).json({ error: "name_required" });
   }
@@ -20,6 +23,11 @@ router.post("/", async (req, res) => {
   const doc = {
     name: name.trim(),
     exerciseType: exerciseType || null,
+
+    exercises: Array.isArray(exercises)
+      ? exercises
+      : [],
+
     createdAt: new Date().toISOString(),
   };
   const ref = await presetsCol(req.userId).add(doc);

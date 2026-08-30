@@ -40,8 +40,15 @@ export const api = {
   saveProfile: (profile) => request("/profile", { method: "PUT", body: JSON.stringify(profile) }),
 
   getPresets: () => request("/presets"),
-  createPreset: (name, exerciseType) =>
-    request("/presets", { method: "POST", body: JSON.stringify({ name, exerciseType }) }),
+  createPreset: (name, exerciseType, exercises = []) =>
+    request("/presets", {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        exerciseType,
+        exercises
+      })
+    }),
   deletePreset: (id) => request(`/presets/${id}`, { method: "DELETE" }),
 
   getSummary: (days = 30) => request(`/summary?days=${days}`),

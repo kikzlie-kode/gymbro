@@ -12,10 +12,20 @@ router.get("/", async (req, res) => {
 
 // POST /api/todos
 router.post("/", async (req, res) => {
-  const { title, exerciseType, scheduledDate, scheduledTime, recurring, reminderEnabled } = req.body;
+  const {
+    title,
+    exerciseType,
+    scheduledDate,
+    scheduledTime,
+    recurring,
+    reminderEnabled,
+    exercises
+  } = req.body;
 
   if (!title || !scheduledDate) {
-    return res.status(400).json({ error: "title_and_scheduledDate_required" });
+    return res.status(400).json({
+      error: "title_and_scheduledDate_required"
+    });
   }
 
   const doc = {
@@ -23,20 +33,38 @@ router.post("/", async (req, res) => {
     exerciseType: exerciseType || null,
     scheduledDate,
     scheduledTime: scheduledTime || null,
-    recurring: recurring || "none", // none | daily | weekly
+
+    recurring: recurring || "none",
     reminderEnabled: reminderEnabled !== false,
-    status: "pending", // pending | done | skipped
+
+    exercises: Array.isArray(exercises)
+      ? exercises
+      : [],
+
+    status: "pending",
     createdAt: new Date().toISOString(),
   };
 
   const ref = await todosCol(req.userId).add(doc);
-  res.status(201).json({ id: ref.id, ...doc });
+
+  res.status(201).json({
+    id: ref.id,
+    ...doc
+  });
 });
 
 // PATCH /api/todos/:id
 router.patch("/:id", async (req, res) => {
-  const allowed = ["title", "exerciseType", "scheduledDate", "scheduledTime", "recurring", "reminderEnabled", "status"];
-  const updates = {};
+  const allowed = [
+    "title",
+    "exerciseType",
+    "scheduledDate",
+    "scheduledTime",
+    "recurring",
+    "reminderEnabled",
+    "status",
+    "exercises"
+  ]; const updates = {};
   for (const key of allowed) {
     if (key in req.body) updates[key] = req.body[key];
   }
