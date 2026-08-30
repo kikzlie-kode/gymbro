@@ -16,12 +16,16 @@ router.post("/", async (req, res) => {
     exerciseType,
     exercises
   } = req.body;
+
   if (!name || !name.trim()) {
-    return res.status(400).json({ error: "name_required" });
+    return res.status(400).json({
+      error: "name_required"
+    });
   }
 
   const doc = {
     name: name.trim(),
+
     exerciseType: exerciseType || null,
 
     exercises: Array.isArray(exercises)
