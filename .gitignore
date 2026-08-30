@@ -7,7 +7,7 @@ functions/.env.*
 liff/.env
 liff/.env.*
 !liff/.env.example
-liff/dist/
+# liff/dist/
 firebase-debug.log
 firebase-debug.*.log
 firestore-debug.log
