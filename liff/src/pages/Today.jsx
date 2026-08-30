@@ -16,7 +16,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
   const [newSetName, setNewSetName] = useState("");
   const [newSetType, setNewSetType] = useState("");
   const [creatingSet, setCreatingSet] = useState(false);
-  
+
   // Custom exercises for building a custom set
   const [customExercises, setCustomExercises] = useState([]);
   const [newExerciseName, setNewExerciseName] = useState("");
@@ -25,6 +25,9 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
 
   const [expandedIds, setExpandedIds] = useState(() => new Set());
   const [exerciseDone, setExerciseDone] = useState({}); // { [todoId]: Set(exerciseIndex) }
+
+  // เก็บรายละเอียด exercises ของแต่ละ todo
+  const [todoExercises, setTodoExercises] = useState({});
 
   const { t, lang } = useSettings();
 
@@ -68,57 +71,83 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     setCustomExercises((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function getExercisesForSet(title) {
+    if (BUILT_IN_SETS.includes(title)) {
+      return BUILT_IN_SET_EXERCISES[title][lang];
+    }
+
+    return [];
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (submitting) return;
 
     let title, exerciseType, customExercisesData;
+
     if (titleMode === "manual") {
       const fd = new FormData(e.target);
+
       title = fd.get("title");
       exerciseType = fd.get("exerciseType") || null;
+
     } else {
-      // Set mode
+
       if (setChoice === "__custom__") {
-        // Creating custom set
+
         if (!newSetName.trim() || customExercises.length === 0) {
-          alert(t("fillRequiredFields") || "Please fill in set name and add exercises");
+          alert(
+            t("fillRequiredFields") ||
+            "Please fill in set name and add exercises"
+          );
           return;
         }
+
         title = newSetName;
         exerciseType = newSetType || null;
+
+        // เก็บรายละเอียดท่าออกกำลังกาย
         customExercisesData = customExercises;
+
       } else if (!setChoice) {
+
         return;
+
       } else if (BUILT_IN_SETS.includes(setChoice)) {
+
         title = setChoice;
         exerciseType = setChoice;
+
       } else {
+
         const preset = customPresets.find((p) => p.id === setChoice);
+
         if (!preset) return;
+
         title = preset.name;
         exerciseType = preset.exerciseType || null;
+
+        // ถ้า Custom Preset มี exercises ติดมาด้วย
+        customExercisesData = preset.exercises || [];
       }
     }
 
     setSubmitting(true);
+
     try {
-      // If custom exercises, store them in the todo's note or create as preset
-      if (customExercisesData) {
-        // Store custom exercises as JSON in the todo (could also create a preset)
-        await api.createTodo({
-          title,
-          exerciseType,
-          scheduledDate: today,
-          // exercises: JSON.stringify(customExercisesData), // if API supports it
-        });
-      } else {
-        await api.createTodo({ title, exerciseType, scheduledDate: today });
-      }
+      await api.createTodo({
+        title,
+        exerciseType,
+        scheduledDate: today,
+        exercises: customExercisesData || null,
+      });
+
       e.target.reset();
       setTitleMode("manual");
       setCustomExercises([]);
+
       reload();
+
     } finally {
       setSubmitting(false);
     }
@@ -144,12 +173,12 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
       const done = exerciseDone[todo.id] || EMPTY_SET;
       const exercises = isSet
         ? BUILT_IN_SET_EXERCISES[todo.title][lang].map((ex, i) => ({
-            name: ex.name,
-            sets: ex.sets,
-            reps: ex.reps,
-            kcal: ex.kcal,
-            done: done.has(i),
-          }))
+          name: ex.name,
+          sets: ex.sets,
+          reps: ex.reps,
+          kcal: ex.kcal,
+          done: done.has(i),
+        }))
         : undefined;
 
       await api.createLog({
@@ -178,7 +207,11 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     if (!name || creatingSet) return;
     setCreatingSet(true);
     try {
-      const created = await api.createPreset(name, newSetType || null);
+      const created = await api.createPreset(
+        name,
+        newSetType || null,
+        customExercises
+      );
       await reloadPresets();
       setSetChoice(created.id);
       setShowCustomBox(false);
@@ -259,11 +292,11 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   onChange={(e) => setNewSetType(e.target.value)}
                   placeholder={t("typeEmpty")}
                 />
-                
+
                 {/* Add exercises section */}
                 <div style={{ marginTop: 16, marginBottom: 16, borderTop: "1px solid #e0e0e0", paddingTop: 12 }}>
                   <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>เพิ่มท่าออกกำลังกาย:</p>
-                  
+
                   <div className="row">
                     <input
                       value={newExerciseName}
@@ -272,7 +305,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                       style={{ flex: 1 }}
                     />
                   </div>
-                  
+
                   <div className="row">
                     <input
                       value={newExerciseSets}
@@ -296,7 +329,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                       + เพิ่ม
                     </button>
                   </div>
-                  
+
                   {/* List of added exercises */}
                   {customExercises.length > 0 && (
                     <div style={{ marginTop: 12 }}>
@@ -318,7 +351,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                     </div>
                   )}
                 </div>
-                
+
                 <div className="row" style={{ marginBottom: 8 }}>
                   <button
                     type="button"
@@ -392,12 +425,19 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
         <div className="empty">{t("emptyToday")}</div>
       ) : (
         todos.map((td) => {
-          const isSet = BUILT_IN_SETS.includes(td.title);
-          const exercises = isSet ? BUILT_IN_SET_EXERCISES[td.title][lang] : null;
+          const isBuiltInSet = BUILT_IN_SETS.includes(td.title);
+          const exercises = isBuiltInSet
+            ? BUILT_IN_SET_EXERCISES[td.title][lang]
+            : (td.exercises || []);
+          const isSet = exercises.length > 0;
           const doneSet = exerciseDone[td.id] || EMPTY_SET;
           const expanded = expandedIds.has(td.id);
           const totalKcal = isSet
-            ? exercises.reduce((sum, ex, i) => sum + (doneSet.has(i) ? ex.kcal : 0), 0)
+            ? exercises.reduce(
+              (sum, ex, i) =>
+                sum + (doneSet.has(i) ? (ex.kcal || 0) : 0),
+              0
+            )
             : 0;
 
           return (
@@ -438,24 +478,55 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
 
               {isSet && expanded && (
                 <div className="exercise-table">
+
                   <div className="col-head"></div>
-                  <div className="col-head">{t("exNameHead")}</div>
-                  <div className="col-head">{t("exRepsHead")}</div>
-                  <div className="col-head">{t("exSetsHead")}</div>
+                  <div className="col-head">
+                    {t("exNameHead")}
+                  </div>
+                  <div className="col-head">
+                    {t("exRepsHead")}
+                  </div>
+                  <div className="col-head">
+                    {t("exSetsHead")}
+                  </div>
+
                   {exercises.map((ex, i) => (
-                    <Fragment key={ex.name}>
+                    <Fragment key={`${ex.name}-${i}`}>
+
                       <button
-                        className={`plate small ${doneSet.has(i) ? "done" : ""}`}
-                        onClick={() => toggleExerciseDone(td.id, i)}
+                        type="button"
+                        className={`plate small ${doneSet.has(i) ? "done" : ""
+                          }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExerciseDone(td.id, i);
+                        }}
                         aria-label={t("markDone")}
                       >
                         ✓
                       </button>
-                      <span className={doneSet.has(i) ? "done-text" : ""}>{ex.name}</span>
-                      <span>{ex.reps}</span>
-                      <span>{ex.sets}</span>
+
+                      <span
+                        className={
+                          doneSet.has(i)
+                            ? "done-text"
+                            : ""
+                        }
+                      >
+                        {ex.name}
+                      </span>
+
+                      <span>
+                        {ex.reps || "-"}
+                      </span>
+
+                      <span>
+                        {ex.sets || "-"}
+                      </span>
+
                     </Fragment>
                   ))}
+
                 </div>
               )}
             </div>
