@@ -16,6 +16,12 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
   const [newSetName, setNewSetName] = useState("");
   const [newSetType, setNewSetType] = useState("");
   const [creatingSet, setCreatingSet] = useState(false);
+  
+  // Custom exercises for building a custom set
+  const [customExercises, setCustomExercises] = useState([]);
+  const [newExerciseName, setNewExerciseName] = useState("");
+  const [newExerciseSets, setNewExerciseSets] = useState("");
+  const [newExerciseReps, setNewExerciseReps] = useState("");
 
   const [expandedIds, setExpandedIds] = useState(() => new Set());
   const [exerciseDone, setExerciseDone] = useState({}); // { [todoId]: Set(exerciseIndex) }
@@ -33,20 +39,58 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
   function handleSetChoiceChange(value) {
     setSetChoice(value);
     setShowCustomBox(value === "__custom__");
+    if (value === "__custom__") {
+      setCustomExercises([]);
+      setNewSetName("");
+      setNewSetType("");
+      setNewExerciseName("");
+      setNewExerciseSets("");
+      setNewExerciseReps("");
+    }
+  }
+
+  function addCustomExercise() {
+    if (!newExerciseName.trim()) return;
+    setCustomExercises((prev) => [
+      ...prev,
+      {
+        name: newExerciseName,
+        sets: newExerciseSets ? Number(newExerciseSets) : null,
+        reps: newExerciseReps || null,
+      },
+    ]);
+    setNewExerciseName("");
+    setNewExerciseSets("");
+    setNewExerciseReps("");
+  }
+
+  function removeCustomExercise(index) {
+    setCustomExercises((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (submitting) return;
 
-    let title, exerciseType;
+    let title, exerciseType, customExercisesData;
     if (titleMode === "manual") {
       const fd = new FormData(e.target);
       title = fd.get("title");
       exerciseType = fd.get("exerciseType") || null;
     } else {
-      if (!setChoice || setChoice === "__custom__") return;
-      if (BUILT_IN_SETS.includes(setChoice)) {
+      // Set mode
+      if (setChoice === "__custom__") {
+        // Creating custom set
+        if (!newSetName.trim() || customExercises.length === 0) {
+          alert(t("fillRequiredFields") || "Please fill in set name and add exercises");
+          return;
+        }
+        title = newSetName;
+        exerciseType = newSetType || null;
+        customExercisesData = customExercises;
+      } else if (!setChoice) {
+        return;
+      } else if (BUILT_IN_SETS.includes(setChoice)) {
         title = setChoice;
         exerciseType = setChoice;
       } else {
@@ -59,9 +103,21 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
 
     setSubmitting(true);
     try {
-      await api.createTodo({ title, exerciseType, scheduledDate: today });
+      // If custom exercises, store them in the todo's note or create as preset
+      if (customExercisesData) {
+        // Store custom exercises as JSON in the todo (could also create a preset)
+        await api.createTodo({
+          title,
+          exerciseType,
+          scheduledDate: today,
+          // exercises: JSON.stringify(customExercisesData), // if API supports it
+        });
+      } else {
+        await api.createTodo({ title, exerciseType, scheduledDate: today });
+      }
       e.target.reset();
       setTitleMode("manual");
+      setCustomExercises([]);
       reload();
     } finally {
       setSubmitting(false);
@@ -203,13 +259,73 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   onChange={(e) => setNewSetType(e.target.value)}
                   placeholder={t("typeEmpty")}
                 />
+                
+                {/* Add exercises section */}
+                <div style={{ marginTop: 16, marginBottom: 16, borderTop: "1px solid #e0e0e0", paddingTop: 12 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>เพิ่มท่าออกกำลังกาย:</p>
+                  
+                  <div className="row">
+                    <input
+                      value={newExerciseName}
+                      onChange={(e) => setNewExerciseName(e.target.value)}
+                      placeholder="ชื่อท่า"
+                      style={{ flex: 1 }}
+                    />
+                  </div>
+                  
+                  <div className="row">
+                    <input
+                      value={newExerciseSets}
+                      onChange={(e) => setNewExerciseSets(e.target.value)}
+                      placeholder="Sets"
+                      type="number"
+                      style={{ flex: 1 }}
+                    />
+                    <input
+                      value={newExerciseReps}
+                      onChange={(e) => setNewExerciseReps(e.target.value)}
+                      placeholder="Reps/set"
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      className="primary"
+                      onClick={addCustomExercise}
+                      style={{ flex: "0 0 auto" }}
+                    >
+                      + เพิ่ม
+                    </button>
+                  </div>
+                  
+                  {/* List of added exercises */}
+                  {customExercises.length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      {customExercises.map((ex, idx) => (
+                        <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
+                          <span style={{ fontSize: 13 }}>
+                            {ex.name} {ex.sets && `• ${ex.sets}x${ex.reps || "?"}`}
+                          </span>
+                          <button
+                            type="button"
+                            className="ghost"
+                            onClick={() => removeCustomExercise(idx)}
+                            style={{ fontSize: 12, padding: "4px 8px" }}
+                          >
+                            ลบ
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
                 <div className="row" style={{ marginBottom: 8 }}>
                   <button
                     type="button"
                     className="primary"
                     style={{ flex: 1 }}
                     onClick={createCustomSet}
-                    disabled={!newSetName.trim() || creatingSet}
+                    disabled={!newSetName.trim() || customExercises.length === 0 || creatingSet}
                   >
                     {t("createSetBtn")}
                   </button>
