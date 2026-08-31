@@ -16,16 +16,18 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
   const [newSetName, setNewSetName] = useState("");
   const [newSetType, setNewSetType] = useState("");
   const [creatingSet, setCreatingSet] = useState(false);
-  
+
   // Custom exercises for building a custom set
   const [customExercises, setCustomExercises] = useState([]);
   const [newExerciseName, setNewExerciseName] = useState("");
   const [newExerciseSets, setNewExerciseSets] = useState("");
   const [newExerciseReps, setNewExerciseReps] = useState("");
-  const [newExerciseWeight, setNewExerciseWeight] = useState("");
 
   const [expandedIds, setExpandedIds] = useState(() => new Set());
   const [exerciseDone, setExerciseDone] = useState({}); // { [todoId]: Set(exerciseIndex) }
+
+  // เก็บรายละเอียด exercises ของแต่ละ todo
+  const [todoExercises, setTodoExercises] = useState({});
 
   const { t, lang } = useSettings();
 
@@ -58,17 +60,27 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
         name: newExerciseName,
         sets: newExerciseSets ? Number(newExerciseSets) : null,
         reps: newExerciseReps || null,
-        weight: newExerciseWeight ? Number(newExerciseWeight) : null,
       },
     ]);
     setNewExerciseName("");
     setNewExerciseSets("");
     setNewExerciseReps("");
-    setNewExerciseWeight("");
   }
 
   function removeCustomExercise(index) {
     setCustomExercises((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function getExercisesForSetChoice(choice) {
+    if (!choice) return [];
+
+    if (BUILT_IN_SETS.includes(choice)) {
+      return BUILT_IN_SET_EXERCISES[choice][lang] || [];
+    }
+
+    const preset = customPresets?.find((p) => p.id === choice);
+
+    return preset?.exercises || [];
   }
 
   async function handleSubmit(e) {
@@ -76,52 +88,70 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     if (submitting) return;
 
     let title, exerciseType, customExercisesData;
+
     if (titleMode === "manual") {
       const fd = new FormData(e.target);
+
       title = fd.get("title");
       exerciseType = fd.get("exerciseType") || null;
+
     } else {
-      // Set mode
+
       if (setChoice === "__custom__") {
-        // Creating custom set
+
         if (!newSetName.trim() || customExercises.length === 0) {
-          alert(t("fillRequiredFields") || "Please fill in set name and add exercises");
+          alert(
+            t("fillRequiredFields") ||
+            "Please fill in set name and add exercises"
+          );
           return;
         }
+
         title = newSetName;
         exerciseType = newSetType || null;
+
+        // เก็บรายละเอียดท่าออกกำลังกาย
         customExercisesData = customExercises;
+
       } else if (!setChoice) {
+
         return;
+
       } else if (BUILT_IN_SETS.includes(setChoice)) {
+
         title = setChoice;
         exerciseType = setChoice;
+
       } else {
+
         const preset = customPresets.find((p) => p.id === setChoice);
+
         if (!preset) return;
+
         title = preset.name;
         exerciseType = preset.exerciseType || null;
+
+        // ถ้า Custom Preset มี exercises ติดมาด้วย
+        customExercisesData = preset.exercises || [];
       }
     }
 
     setSubmitting(true);
+
     try {
-      // If custom exercises, store them as JSON in note field
-      if (customExercisesData) {
-        const exercisesJson = JSON.stringify(customExercisesData);
-        await api.createTodo({
-          title,
-          exerciseType,
-          scheduledDate: today,
-          note: exercisesJson, // Store exercises as JSON in note field
-        });
-      } else {
-        await api.createTodo({ title, exerciseType, scheduledDate: today });
-      }
+      await api.createTodo({
+        title,
+        exerciseType,
+        scheduledDate: today,
+        exercises: customExercisesData || null,
+      });
+
       e.target.reset();
       setTitleMode("manual");
       setCustomExercises([]);
+
       reload();
+
     } finally {
       setSubmitting(false);
     }
@@ -143,16 +173,23 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
 
   function complete(todo) {
     return withBusy(todo.id, async () => {
-      const isSet = BUILT_IN_SETS.includes(todo.title);
+      const isBuiltInSet = BUILT_IN_SETS.includes(todo.title);
+
+      const exercises = isBuiltInSet
+        ? BUILT_IN_SET_EXERCISES[todo.title][lang]
+        : (todo.exercises || []);
+
+      const isSet = exercises.length > 0;
       const done = exerciseDone[todo.id] || EMPTY_SET;
-      const exercises = isSet
-        ? BUILT_IN_SET_EXERCISES[todo.title][lang].map((ex, i) => ({
-            name: ex.name,
-            sets: ex.sets,
-            reps: ex.reps,
-            kcal: ex.kcal,
-            done: done.has(i),
-          }))
+
+      const logExercises = isSet
+        ? exercises.map((ex, i) => ({
+          name: ex.name,
+          sets: ex.sets,
+          reps: ex.reps,
+          kcal: ex.kcal || 0,
+          done: done.has(i),
+        }))
         : undefined;
 
       await api.createLog({
@@ -160,9 +197,11 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
         exerciseType: todo.exerciseType || todo.title,
         date: today,
         note: todo.exerciseType ? todo.title : null,
-        exercises,
+        exercises: logExercises,
       });
+
       await api.deleteTodo(todo.id);
+
       reload();
       reloadLogs();
       reloadSummary();
@@ -181,7 +220,11 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     if (!name || creatingSet) return;
     setCreatingSet(true);
     try {
-      const created = await api.createPreset(name, newSetType || null);
+      const created = await api.createPreset(
+        name,
+        newSetType || null,
+        customExercises
+      );
       await reloadPresets();
       setSetChoice(created.id);
       setShowCustomBox(false);
@@ -262,11 +305,11 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   onChange={(e) => setNewSetType(e.target.value)}
                   placeholder={t("typeEmpty")}
                 />
-                
+
                 {/* Add exercises section */}
                 <div style={{ marginTop: 16, marginBottom: 16, borderTop: "1px solid #e0e0e0", paddingTop: 12 }}>
                   <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>เพิ่มท่าออกกำลังกาย:</p>
-                  
+
                   <div className="row">
                     <input
                       value={newExerciseName}
@@ -275,7 +318,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                       style={{ flex: 1 }}
                     />
                   </div>
-                  
+
                   <div className="row">
                     <input
                       value={newExerciseSets}
@@ -290,14 +333,6 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                       placeholder="Reps/set"
                       style={{ flex: 1 }}
                     />
-                    <input
-                      value={newExerciseWeight}
-                      onChange={(e) => setNewExerciseWeight(e.target.value)}
-                      placeholder="Weight (kg)"
-                      type="number"
-                      step="0.5"
-                      style={{ flex: 1 }}
-                    />
                     <button
                       type="button"
                       className="primary"
@@ -307,14 +342,14 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                       + เพิ่ม
                     </button>
                   </div>
-                  
+
                   {/* List of added exercises */}
                   {customExercises.length > 0 && (
                     <div style={{ marginTop: 12 }}>
                       {customExercises.map((ex, idx) => (
                         <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
                           <span style={{ fontSize: 13 }}>
-                            {ex.name} {ex.sets && `• ${ex.sets}x${ex.reps || "?"}`} {ex.weight && `• ${ex.weight}kg`}
+                            {ex.name} {ex.sets && `• ${ex.sets}x${ex.reps || "?"}`}
                           </span>
                           <button
                             type="button"
@@ -329,7 +364,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                     </div>
                   )}
                 </div>
-                
+
                 <div className="row" style={{ marginBottom: 8 }}>
                   <button
                     type="button"
@@ -372,23 +407,36 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   <option value="__custom__">{t("addCustomOption")}</option>
                 </select>
 
-                {BUILT_IN_SETS.includes(setChoice) && (
-                  <div className="set-detail">
-                    <span className="card-eyebrow">{setChoice}</span>
-                    <div className="exercise-table no-check">
-                      <div className="col-head">{t("exNameHead")}</div>
-                      <div className="col-head">{t("exRepsHead")}</div>
-                      <div className="col-head">{t("exSetsHead")}</div>
-                      {BUILT_IN_SET_EXERCISES[setChoice][lang].map((ex) => (
-                        <Fragment key={ex.name}>
-                          <span>{ex.name}</span>
-                          <span>{ex.reps}</span>
-                          <span>{ex.sets}</span>
-                        </Fragment>
-                      ))}
+                {setChoice && getExercisesForSetChoice(setChoice).length > 0 && (() => {
+                  const exercises = getExercisesForSetChoice(setChoice);
+                  const selectedPreset = customPresets?.find(
+                    (p) => p.id === setChoice
+                  );
+
+                  const title = BUILT_IN_SETS.includes(setChoice)
+                    ? setChoice
+                    : selectedPreset?.name || "";
+
+                  return (
+                    <div className="set-detail">
+                      <span className="card-eyebrow">{title}</span>
+
+                      <div className="exercise-table no-check">
+                        <div className="col-head">{t("exNameHead")}</div>
+                        <div className="col-head">{t("exRepsHead")}</div>
+                        <div className="col-head">{t("exSetsHead")}</div>
+
+                        {exercises.map((ex, index) => (
+                          <Fragment key={`${ex.name}-${index}`}>
+                            <span>{ex.name}</span>
+                            <span>{ex.reps || "-"}</span>
+                            <span>{ex.sets || "-"}</span>
+                          </Fragment>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </>
             )}
           </>
@@ -403,12 +451,26 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
         <div className="empty">{t("emptyToday")}</div>
       ) : (
         todos.map((td) => {
-          const isSet = BUILT_IN_SETS.includes(td.title);
-          const exercises = isSet ? BUILT_IN_SET_EXERCISES[td.title][lang] : null;
+          const isBuiltInSet = BUILT_IN_SETS.includes(td.title);
+          const customPreset = customPresets?.find(
+            (preset) => preset.name === td.title
+          );
+
+          const exercises = isBuiltInSet
+            ? BUILT_IN_SET_EXERCISES[td.title]?.[lang] || []
+            : td.exercises?.length
+              ? td.exercises
+              : customPreset?.exercises || [];
+
+          const isSet = exercises.length > 0;
           const doneSet = exerciseDone[td.id] || EMPTY_SET;
           const expanded = expandedIds.has(td.id);
           const totalKcal = isSet
-            ? exercises.reduce((sum, ex, i) => sum + (doneSet.has(i) ? ex.kcal : 0), 0)
+            ? exercises.reduce(
+              (sum, ex, i) =>
+                sum + (doneSet.has(i) ? (ex.kcal || 0) : 0),
+              0
+            )
             : 0;
 
           return (
@@ -449,24 +511,55 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
 
               {isSet && expanded && (
                 <div className="exercise-table">
+
                   <div className="col-head"></div>
-                  <div className="col-head">{t("exNameHead")}</div>
-                  <div className="col-head">{t("exRepsHead")}</div>
-                  <div className="col-head">{t("exSetsHead")}</div>
+                  <div className="col-head">
+                    {t("exNameHead")}
+                  </div>
+                  <div className="col-head">
+                    {t("exRepsHead")}
+                  </div>
+                  <div className="col-head">
+                    {t("exSetsHead")}
+                  </div>
+
                   {exercises.map((ex, i) => (
-                    <Fragment key={ex.name}>
+                    <Fragment key={`${ex.name}-${i}`}>
+
                       <button
-                        className={`plate small ${doneSet.has(i) ? "done" : ""}`}
-                        onClick={() => toggleExerciseDone(td.id, i)}
+                        type="button"
+                        className={`plate small ${doneSet.has(i) ? "done" : ""
+                          }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExerciseDone(td.id, i);
+                        }}
                         aria-label={t("markDone")}
                       >
                         ✓
                       </button>
-                      <span className={doneSet.has(i) ? "done-text" : ""}>{ex.name}</span>
-                      <span>{ex.reps}</span>
-                      <span>{ex.sets}</span>
+
+                      <span
+                        className={
+                          doneSet.has(i)
+                            ? "done-text"
+                            : ""
+                        }
+                      >
+                        {ex.name}
+                      </span>
+
+                      <span>
+                        {ex.reps || "-"}
+                      </span>
+
+                      <span>
+                        {ex.sets || "-"}
+                      </span>
+
                     </Fragment>
                   ))}
+
                 </div>
               )}
             </div>
