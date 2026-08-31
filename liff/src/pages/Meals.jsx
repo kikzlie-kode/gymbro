@@ -180,6 +180,9 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
                 <div className="card-meta">
                   {m.date} · {m.calories} {t("kcalUnit")}
                 </div>
+                <div className="card-meta">
+                  {m.note}
+                </div>
               </div>
               <button
                 className="icon-btn"
