@@ -452,9 +452,16 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
       ) : (
         todos.map((td) => {
           const isBuiltInSet = BUILT_IN_SETS.includes(td.title);
+          const customPreset = customPresets?.find(
+            (preset) => preset.name === td.title
+          );
+
           const exercises = isBuiltInSet
-            ? BUILT_IN_SET_EXERCISES[td.title][lang]
-            : (td.exercises || []);
+            ? BUILT_IN_SET_EXERCISES[td.title]?.[lang] || []
+            : td.exercises?.length
+              ? td.exercises
+              : customPreset?.exercises || [];
+
           const isSet = exercises.length > 0;
           const doneSet = exerciseDone[td.id] || EMPTY_SET;
           const expanded = expandedIds.has(td.id);
