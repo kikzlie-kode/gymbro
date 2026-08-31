@@ -71,6 +71,18 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     setCustomExercises((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function getExercisesForSetChoice(choice) {
+    if (!choice) return [];
+
+    if (BUILT_IN_SETS.includes(choice)) {
+      return BUILT_IN_SET_EXERCISES[choice][lang] || [];
+    }
+
+    const preset = customPresets?.find((p) => p.id === choice);
+
+    return preset?.exercises || [];
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (submitting) return;
@@ -161,14 +173,21 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
 
   function complete(todo) {
     return withBusy(todo.id, async () => {
-      const isSet = BUILT_IN_SETS.includes(todo.title);
+      const isBuiltInSet = BUILT_IN_SETS.includes(todo.title);
+
+      const exercises = isBuiltInSet
+        ? BUILT_IN_SET_EXERCISES[todo.title][lang]
+        : (todo.exercises || []);
+
+      const isSet = exercises.length > 0;
       const done = exerciseDone[todo.id] || EMPTY_SET;
-      const exercises = isSet
-        ? BUILT_IN_SET_EXERCISES[todo.title][lang].map((ex, i) => ({
+
+      const logExercises = isSet
+        ? exercises.map((ex, i) => ({
           name: ex.name,
           sets: ex.sets,
           reps: ex.reps,
-          kcal: ex.kcal,
+          kcal: ex.kcal || 0,
           done: done.has(i),
         }))
         : undefined;
@@ -178,9 +197,11 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
         exerciseType: todo.exerciseType || todo.title,
         date: today,
         note: todo.exerciseType ? todo.title : null,
-        exercises,
+        exercises: logExercises,
       });
+
       await api.deleteTodo(todo.id);
+
       reload();
       reloadLogs();
       reloadSummary();
@@ -318,7 +339,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                       onClick={addCustomExercise}
                       style={{ flex: "0 0 auto" }}
                     >
-                      +
+                      + เพิ่ม
                     </button>
                   </div>
 
@@ -386,40 +407,36 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   <option value="__custom__">{t("addCustomOption")}</option>
                 </select>
 
-                {BUILT_IN_SETS.includes(setChoice) && (
-                  <div className="set-detail">
-                    <span className="card-eyebrow">{setChoice}</span>
-                    <div className="exercise-table no-check">
-                      <div className="col-head">{t("exNameHead")}</div>
-                      <div className="col-head">{t("exRepsHead")}</div>
-                      <div className="col-head">{t("exSetsHead")}</div>
-                      {BUILT_IN_SET_EXERCISES[setChoice][lang].map((ex) => (
-                        <Fragment key={ex.name}>
-                          <span>{ex.name}</span>
-                          <span>{ex.reps}</span>
-                          <span>{ex.sets}</span>
-                        </Fragment>
-                      ))}
+                {setChoice && getExercisesForSetChoice(setChoice).length > 0 && (() => {
+                  const exercises = getExercisesForSetChoice(setChoice);
+                  const selectedPreset = customPresets?.find(
+                    (p) => p.id === setChoice
+                  );
+
+                  const title = BUILT_IN_SETS.includes(setChoice)
+                    ? setChoice
+                    : selectedPreset?.name || "";
+
+                  return (
+                    <div className="set-detail">
+                      <span className="card-eyebrow">{title}</span>
+
+                      <div className="exercise-table no-check">
+                        <div className="col-head">{t("exNameHead")}</div>
+                        <div className="col-head">{t("exRepsHead")}</div>
+                        <div className="col-head">{t("exSetsHead")}</div>
+
+                        {exercises.map((ex, index) => (
+                          <Fragment key={`${ex.name}-${index}`}>
+                            <span>{ex.name}</span>
+                            <span>{ex.reps || "-"}</span>
+                            <span>{ex.sets || "-"}</span>
+                          </Fragment>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-                {customPresets.includes(setChoice) && (
-                  <div className="set-detail">
-                    <span className="card-eyebrow">{setChoice}</span>
-                    <div className="exercise-table no-check">
-                      <div className="col-head">{t("exNameHead")}</div>
-                      <div className="col-head">{t("exRepsHead")}</div>
-                      <div className="col-head">{t("exSetsHead")}</div>
-                      {customPresets[setChoice][lang].map((ex) => (
-                        <Fragment key={ex.name}>
-                          <span>{ex.name}</span>
-                          <span>{ex.reps}</span>
-                          <span>{ex.sets}</span>
-                        </Fragment>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
               </>
             )}
           </>
@@ -435,7 +452,6 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
       ) : (
         todos.map((td) => {
           const isBuiltInSet = BUILT_IN_SETS.includes(td.title);
-          // const isBuiltOutSet = BUILT_OUT_SETS.includes(td.title);
           const exercises = isBuiltInSet
             ? BUILT_IN_SET_EXERCISES[td.title][lang]
             : (td.exercises || []);
