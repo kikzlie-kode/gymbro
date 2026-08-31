@@ -71,14 +71,6 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     setCustomExercises((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function getExercisesForSet(title) {
-    if (BUILT_IN_SETS.includes(title)) {
-      return BUILT_IN_SET_EXERCISES[title][lang];
-    }
-
-    return [];
-  }
-
   async function handleSubmit(e) {
     e.preventDefault();
     if (submitting) return;
@@ -326,7 +318,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                       onClick={addCustomExercise}
                       style={{ flex: "0 0 auto" }}
                     >
-                      + เพิ่ม
+                      +
                     </button>
                   </div>
 
@@ -411,6 +403,23 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                     </div>
                   </div>
                 )}
+                {customPresets.includes(setChoice) && (
+                  <div className="set-detail">
+                    <span className="card-eyebrow">{setChoice}</span>
+                    <div className="exercise-table no-check">
+                      <div className="col-head">{t("exNameHead")}</div>
+                      <div className="col-head">{t("exRepsHead")}</div>
+                      <div className="col-head">{t("exSetsHead")}</div>
+                      {customPresets[setChoice][lang].map((ex) => (
+                        <Fragment key={ex.name}>
+                          <span>{ex.name}</span>
+                          <span>{ex.reps}</span>
+                          <span>{ex.sets}</span>
+                        </Fragment>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </>
@@ -426,6 +435,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
       ) : (
         todos.map((td) => {
           const isBuiltInSet = BUILT_IN_SETS.includes(td.title);
+          // const isBuiltOutSet = BUILT_OUT_SETS.includes(td.title);
           const exercises = isBuiltInSet
             ? BUILT_IN_SET_EXERCISES[td.title][lang]
             : (td.exercises || []);
