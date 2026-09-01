@@ -15,7 +15,7 @@ router.get("/", async (req, res) => {
 
 // POST /api/meals
 router.post("/", async (req, res) => {
-  const { name, calories, date, note } = req.body;
+  const { name, calories, date, protein, carb, fat } = req.body;
 
   if (!name || !calories || !date) {
     return res.status(400).json({ error: "name_calories_and_date_required" });
@@ -25,7 +25,9 @@ router.post("/", async (req, res) => {
     name,
     calories: Number(calories),
     date,
-    note: note || null,
+    protein: protein ? Number(protein) : null,
+    carb: carb ? Number(carb) : null,
+    fat: fat ? Number(fat) : null,
     createdAt: new Date().toISOString(),
   };
 
