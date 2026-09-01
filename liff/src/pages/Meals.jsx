@@ -270,15 +270,6 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
               </div>
             ))}
           
-          {/* Total Summary */}
-          <div className="card" style={{ background: "#f5f5f5", marginTop: "12px" }}>
-            <div className="card-meta">
-              Total Calories: <strong>{totalCal}</strong> kcal
-            </div>
-            <div className="card-meta">
-              Protein: <strong>{totalProtein.toFixed(1)}g</strong> | Carb: <strong>{totalCarb.toFixed(1)}g</strong> | Fat: <strong>{totalFat.toFixed(1)}g</strong>
-            </div>
-          </div>
         </>
       )}
     </>
