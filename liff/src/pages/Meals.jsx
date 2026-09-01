@@ -272,9 +272,6 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
           
           {/* Total Summary */}
           <div className="card" style={{ background: "#f5f5f5", marginTop: "12px" }}>
-            <div className="card-title" style={{ marginBottom: "8px" }}>
-              {t("totalLabel") || "Total for"} {selectedDate}
-            </div>
             <div className="card-meta">
               Total Calories: <strong>{totalCal}</strong> kcal
             </div>
