@@ -175,22 +175,43 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
         </div>
       </div>
 
-      <div className="stat-row">
-        <div className="stat">
-          <div className="num">{totalCal}</div>
-          <div className="label">{t("caloriesLabel") || "Calories"}</div>
+      <div style={{
+        display: "flex",
+        background: "#1a1f2e",
+        borderRadius: "12px",
+        padding: "20px",
+        gap: "20px",
+        alignItems: "center",
+        color: "#fff",
+        marginBottom: "16px"
+      }}>
+        {/* Left side - Calories */}
+        <div style={{ flex: 1, textAlign: "center" }}>
+          <div style={{ fontSize: "48px", fontWeight: "bold", color: "#ff9500" }}>
+            {totalCal}
+          </div>
+          <div style={{ fontSize: "12px", color: "#8a92a8", marginTop: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            Calories Label
+          </div>
         </div>
-        <div className="stat">
-          <div className="num">{totalProtein.toFixed(1)}g</div>
-          <div className="label">{t("proteinLabel") || "Protein"}</div>
-        </div>
-        <div className="stat">
-          <div className="num">{totalCarb.toFixed(1)}g</div>
-          <div className="label">{t("carbLabel") || "Carb"}</div>
-        </div>
-        <div className="stat">
-          <div className="num">{totalFat.toFixed(1)}g</div>
-          <div className="label">{t("fatLabel") || "Fat"}</div>
+        
+        {/* Separator */}
+        <div style={{ width: "1px", height: "80px", background: "#8a92a8", opacity: 0.5 }} />
+        
+        {/* Right side - Macros */}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <span style={{ fontSize: "13px", color: "#8a92a8", textTransform: "uppercase", letterSpacing: "0.5px" }}>Protein</span>
+            <span style={{ fontSize: "20px", fontWeight: "bold", color: "#ff9500" }}>{totalProtein.toFixed(2)}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <span style={{ fontSize: "13px", color: "#8a92a8", textTransform: "uppercase", letterSpacing: "0.5px" }}>Carbs</span>
+            <span style={{ fontSize: "20px", fontWeight: "bold", color: "#ff9500" }}>{totalCarb.toFixed(2)}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "13px", color: "#8a92a8", textTransform: "uppercase", letterSpacing: "0.5px" }}>Fat</span>
+            <span style={{ fontSize: "20px", fontWeight: "bold", color: "#ff9500" }}>{totalFat.toFixed(2)}</span>
+          </div>
         </div>
       </div>
 
@@ -210,6 +231,12 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
           {t("saveMeal")}
         </button>
       </form>
+
+      <div style={{ marginTop: "20px", marginBottom: "8px" }}>
+        <span style={{ fontSize: "12px", fontWeight: "600", color: "#666" }}>
+          {t("mealsLog") || "Meal Log"}
+        </span>
+      </div>
 
       {meals.filter((m) => m.date === selectedDate).length === 0 ? (
         <div className="empty">{t("emptyMeals")}</div>
