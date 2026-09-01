@@ -241,33 +241,48 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
       {meals.filter((m) => m.date === selectedDate).length === 0 ? (
         <div className="empty">{t("emptyMeals")}</div>
       ) : (
-        meals
-          .filter((m) => m.date === selectedDate)
-          .map((m) => (
-            <div key={m.id} className="card">
-              <div className="row between">
-                <div>
-                  <div className="card-title">{m.name}</div>
-                  <div className="card-meta">
-                    {m.date} · {m.calories} {t("kcalUnit")}
+        <>
+          {meals
+            .filter((m) => m.date === selectedDate)
+            .map((m) => (
+              <div key={m.id} className="card">
+                <div className="row between">
+                  <div style={{ flex: 1 }}>
+                    <div className="card-title">{m.name}</div>
+                    <div className="card-meta">
+                      {m.date} · {m.calories} kcal
+                    </div>
+                    <div className="card-meta">
+                      {m.protein !== undefined && m.protein !== null && `Protein: ${m.protein}g`}
+                      {m.carb !== undefined && m.carb !== null && ` | Carb: ${m.carb}g`}
+                      {m.fat !== undefined && m.fat !== null && ` | Fat: ${m.fat}g`}
+                    </div>
                   </div>
-                  <div className="card-meta">
-                    {m.protein !== undefined && m.protein !== null && `P: ${m.protein}g`}
-                    {m.carb !== undefined && m.carb !== null && ` C: ${m.carb}g`}
-                    {m.fat !== undefined && m.fat !== null && ` F: ${m.fat}g`}
-                  </div>
+                  <button
+                    className="icon-btn"
+                    onClick={() => remove(m.id)}
+                    disabled={busyIds.has(m.id)}
+                    aria-label={t("delete")}
+                  >
+                    ✕
+                  </button>
                 </div>
-              <button
-                className="icon-btn"
-                onClick={() => remove(m.id)}
-                disabled={busyIds.has(m.id)}
-                aria-label={t("delete")}
-              >
-                ✕
-              </button>
+              </div>
+            ))}
+          
+          {/* Total Summary */}
+          <div className="card" style={{ background: "#f5f5f5", marginTop: "12px" }}>
+            <div className="card-title" style={{ marginBottom: "8px" }}>
+              {t("totalLabel") || "Total for"} {selectedDate}
+            </div>
+            <div className="card-meta">
+              Total Calories: <strong>{totalCal}</strong> kcal
+            </div>
+            <div className="card-meta">
+              Protein: <strong>{totalProtein.toFixed(1)}g</strong> | Carb: <strong>{totalCarb.toFixed(1)}g</strong> | Fat: <strong>{totalFat.toFixed(1)}g</strong>
             </div>
           </div>
-        ))
+        </>
       )}
     </>
   );
