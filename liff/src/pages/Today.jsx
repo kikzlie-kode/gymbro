@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react";
 import { api } from "../api/client.js";
-import { useSettings, EXERCISE_TYPES, BUILT_IN_SET_EXERCISES } from "../i18n.jsx";
+import { useSettings, BUILT_IN_SET_EXERCISES } from "../i18n.jsx";
 
 const today = new Date().toISOString().slice(0, 10);
 const BUILT_IN_SETS = ["HIIT", "Cardio", "Weight Training"];
@@ -93,7 +93,22 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
       const fd = new FormData(e.target);
 
       title = fd.get("title");
-      exerciseType = fd.get("exerciseType") || null;
+      exerciseType = null;
+
+      const weight = fd.get("weight");
+      const reps = fd.get("reps");
+      const sets = fd.get("sets");
+
+      if (weight || reps || sets) {
+        customExercisesData = [
+          {
+            name: title,
+            sets: sets ? Number(sets) : null,
+            reps: reps ? Number(reps) : null,
+            weightKg: weight ? Number(weight) : null,
+          },
+        ];
+      }
 
     } else {
 
@@ -180,6 +195,8 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
         : (todo.exercises || []);
 
       const isSet = exercises.length > 0;
+      const isQuickEntry =
+        !isBuiltInSet && exercises.length === 1 && exercises[0].weightKg != null;
       const done = exerciseDone[todo.id] || EMPTY_SET;
 
       const logExercises = isSet
@@ -187,8 +204,9 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
           name: ex.name,
           sets: ex.sets,
           reps: ex.reps,
+          weightKg: ex.weightKg ?? null,
           kcal: ex.kcal || 0,
-          done: done.has(i),
+          done: isQuickEntry ? true : done.has(i),
         }))
         : undefined;
 
@@ -281,14 +299,30 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
         {titleMode === "manual" ? (
           <>
             <input name="title" placeholder={t("titlePlaceholder")} required />
-            <select name="exerciseType" defaultValue="">
-              <option value="">{t("typeEmpty")}</option>
-              {EXERCISE_TYPES.map((et) => (
-                <option key={et} value={et}>
-                  {et}
-                </option>
-              ))}
-            </select>
+            <div className="row">
+              <input
+                name="weight"
+                type="number"
+                step="any"
+                min="0"
+                placeholder={t("weightPlaceholder") || "น้ำหนัก (กก.)"}
+                style={{ flex: 1 }}
+              />
+              <input
+                name="reps"
+                type="number"
+                min="0"
+                placeholder={t("repsPlaceholder") || "Reps"}
+                style={{ flex: 1 }}
+              />
+              <input
+                name="sets"
+                type="number"
+                min="0"
+                placeholder={t("setsPlaceholder") || "Sets"}
+                style={{ flex: 1 }}
+              />
+            </div>
           </>
         ) : (
           <>
@@ -462,7 +496,13 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
               ? td.exercises
               : customPreset?.exercises || [];
 
-          const isSet = exercises.length > 0;
+          const isQuickEntry =
+            !isBuiltInSet &&
+            !customPreset &&
+            exercises.length === 1 &&
+            exercises[0].weightKg != null;
+
+          const isSet = exercises.length > 0 && !isQuickEntry;
           const doneSet = exerciseDone[td.id] || EMPTY_SET;
           const expanded = expandedIds.has(td.id);
           const totalKcal = isSet
@@ -486,7 +526,17 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                     {isSet && <span className="expand-caret">{expanded ? "▲" : "▼"}</span>}
                   </div>
                   <div className="card-meta">
-                    {isSet ? `${doneSet.size}/${exercises.length} · ${totalKcal} kcal` : td.exerciseType || ""}
+                    {isSet
+                      ? `${doneSet.size}/${exercises.length} · ${totalKcal} kcal`
+                      : isQuickEntry
+                        ? [
+                          exercises[0].weightKg != null && `${exercises[0].weightKg} kg`,
+                          exercises[0].reps != null && `${exercises[0].reps} reps`,
+                          exercises[0].sets != null && `${exercises[0].sets} sets`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")
+                        : ""}
                   </div>
                 </div>
                 <div className="row" onClick={(e) => e.stopPropagation()}>
