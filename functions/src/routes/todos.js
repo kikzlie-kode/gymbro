@@ -19,7 +19,11 @@ router.post("/", async (req, res) => {
     scheduledTime,
     recurring,
     reminderEnabled,
-    exercises
+    exercises,
+    entryType,
+    weightKg,
+    reps,
+    sets
   } = req.body;
 
   if (!title || !scheduledDate) {
@@ -27,6 +31,14 @@ router.post("/", async (req, res) => {
       error: "title_and_scheduledDate_required"
     });
   }
+
+  // entryType แยกให้ชัดเจนว่าเป็นการเพิ่มแบบ manual (กรอก weight/reps/set เอง)
+  // หรือแบบ set (built-in / custom preset ที่มีหลายท่า) — ค่า default เดาจาก exercises
+  // ให้ backward-compatible กับ client เก่าที่ยังไม่ส่ง entryType มา
+  const resolvedEntryType =
+    entryType === "manual" || entryType === "set"
+      ? entryType
+      : (Array.isArray(exercises) && exercises.length > 0 ? "set" : "manual");
 
   const doc = {
     title,
@@ -37,7 +49,15 @@ router.post("/", async (req, res) => {
     recurring: recurring || "none",
     reminderEnabled: reminderEnabled !== false,
 
-    exercises: Array.isArray(exercises)
+    entryType: resolvedEntryType,
+
+    // manual entry เท่านั้นที่ใช้ field เหล่านี้ — ไม่ปะปนกับ exercises ของ custom set
+    weightKg: resolvedEntryType === "manual" && weightKg != null ? Number(weightKg) : null,
+    reps: resolvedEntryType === "manual" && reps != null ? Number(reps) : null,
+    sets: resolvedEntryType === "manual" && sets != null ? Number(sets) : null,
+
+    // custom set เท่านั้นที่ใช้ exercises — manual entry จะเป็น [] เสมอ
+    exercises: resolvedEntryType === "set" && Array.isArray(exercises)
       ? exercises
       : [],
 
@@ -63,7 +83,11 @@ router.patch("/:id", async (req, res) => {
     "recurring",
     "reminderEnabled",
     "status",
-    "exercises"
+    "exercises",
+    "entryType",
+    "weightKg",
+    "reps",
+    "sets"
   ]; const updates = {};
   for (const key of allowed) {
     if (key in req.body) updates[key] = req.body[key];

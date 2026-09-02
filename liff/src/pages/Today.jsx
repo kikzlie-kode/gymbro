@@ -87,30 +87,27 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     e.preventDefault();
     if (submitting) return;
 
-    let title, exerciseType, customExercisesData;
+    let title, exerciseType, entryType, customExercisesData;
+    let weightKg = null, reps = null, sets = null;
 
     if (titleMode === "manual") {
       const fd = new FormData(e.target);
 
+      entryType = "manual";
       title = fd.get("title");
       exerciseType = null;
 
-      const weight = fd.get("weight");
-      const reps = fd.get("reps");
-      const sets = fd.get("sets");
+      const weightRaw = fd.get("weight");
+      const repsRaw = fd.get("reps");
+      const setsRaw = fd.get("sets");
 
-      if (weight || reps || sets) {
-        customExercisesData = [
-          {
-            name: title,
-            sets: sets ? Number(sets) : null,
-            reps: reps ? Number(reps) : null,
-            weightKg: weight ? Number(weight) : null,
-          },
-        ];
-      }
+      weightKg = weightRaw ? Number(weightRaw) : null;
+      reps = repsRaw ? Number(repsRaw) : null;
+      sets = setsRaw ? Number(setsRaw) : null;
 
     } else {
+
+      entryType = "set";
 
       if (setChoice === "__custom__") {
 
@@ -158,7 +155,12 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
         title,
         exerciseType,
         scheduledDate: today,
-        exercises: customExercisesData || null,
+        entryType,
+        // manual และ set แยกกันเด็ดขาด: manual ใช้ weightKg/reps/sets, set ใช้ exercises
+        weightKg: entryType === "manual" ? weightKg : null,
+        reps: entryType === "manual" ? reps : null,
+        sets: entryType === "manual" ? sets : null,
+        exercises: entryType === "set" ? (customExercisesData || []) : [],
       });
 
       e.target.reset();
@@ -189,14 +191,33 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
   function complete(todo) {
     return withBusy(todo.id, async () => {
       const isBuiltInSet = BUILT_IN_SETS.includes(todo.title);
+      const isManual = todo.entryType === "manual";
+
+      if (isManual) {
+        // manual entry: ไม่มี exercises array, ใช้ weightKg/reps/sets ที่เก็บบน todo ตรง ๆ
+        await api.createLog({
+          todoId: todo.id,
+          exerciseType: todo.exerciseType || todo.title,
+          date: today,
+          note: todo.title,
+          weightKg: todo.weightKg ?? null,
+          reps: todo.reps ?? null,
+          sets: todo.sets ?? null,
+        });
+
+        await api.deleteTodo(todo.id);
+
+        reload();
+        reloadLogs();
+        reloadSummary();
+        return;
+      }
 
       const exercises = isBuiltInSet
         ? BUILT_IN_SET_EXERCISES[todo.title][lang]
         : (todo.exercises || []);
 
       const isSet = exercises.length > 0;
-      const isQuickEntry =
-        !isBuiltInSet && exercises.length === 1 && exercises[0].weightKg != null;
       const done = exerciseDone[todo.id] || EMPTY_SET;
 
       const logExercises = isSet
@@ -204,9 +225,8 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
           name: ex.name,
           sets: ex.sets,
           reps: ex.reps,
-          weightKg: ex.weightKg ?? null,
           kcal: ex.kcal || 0,
-          done: isQuickEntry ? true : done.has(i),
+          done: done.has(i),
         }))
         : undefined;
 
@@ -490,19 +510,15 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
             (preset) => preset.name === td.title
           );
 
+          const isManual = td.entryType === "manual";
+
           const exercises = isBuiltInSet
             ? BUILT_IN_SET_EXERCISES[td.title]?.[lang] || []
             : td.exercises?.length
               ? td.exercises
               : customPreset?.exercises || [];
 
-          const isQuickEntry =
-            !isBuiltInSet &&
-            !customPreset &&
-            exercises.length === 1 &&
-            exercises[0].weightKg != null;
-
-          const isSet = exercises.length > 0 && !isQuickEntry;
+          const isSet = !isManual && exercises.length > 0;
           const doneSet = exerciseDone[td.id] || EMPTY_SET;
           const expanded = expandedIds.has(td.id);
           const totalKcal = isSet
@@ -528,11 +544,11 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   <div className="card-meta">
                     {isSet
                       ? `${doneSet.size}/${exercises.length} · ${totalKcal} kcal`
-                      : isQuickEntry
+                      : isManual
                         ? [
-                          exercises[0].weightKg != null && `${exercises[0].weightKg} kg`,
-                          exercises[0].reps != null && `${exercises[0].reps} reps`,
-                          exercises[0].sets != null && `${exercises[0].sets} sets`,
+                          td.weightKg != null && `${td.weightKg} kg`,
+                          td.reps != null && `${td.reps} reps`,
+                          td.sets != null && `${td.sets} sets`,
                         ]
                           .filter(Boolean)
                           .join(" · ")
