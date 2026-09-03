@@ -64,7 +64,7 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
       const protein = fd.get("protein") ? Number(fd.get("protein")) : null;
       const carb = fd.get("carb") ? Number(fd.get("carb")) : null;
       const fat = fd.get("fat") ? Number(fd.get("fat")) : null;
-
+      
       await api.createMeal({
         name: fd.get("name"),
         calories: Number(fd.get("calories")),
@@ -96,9 +96,9 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
   }
 
   const todayCal = meals.filter((m) => m.date === today).reduce((sum, m) => sum + (m.calories || 0), 0);
-
+  
   const selectedMeals = meals.filter((m) => m.date === selectedDate);
-
+  
   // Sort meals by createdAt
   const getSortedMeals = () => {
     const sorted = [...selectedMeals];
@@ -108,14 +108,14 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
       return sorted.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
     }
   };
-
+  
   const sortedMeals = getSortedMeals();
-
+  
   const totalCal = sortedMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
   const totalProtein = sortedMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
   const totalCarb = sortedMeals.reduce((sum, m) => sum + (m.carb || 0), 0);
   const totalFat = sortedMeals.reduce((sum, m) => sum + (m.fat || 0), 0);
-
+  
   const hasProfile = Boolean(profile.weightKg);
   const targets = hasProfile ? calcTargets(profile) : null;
 
@@ -158,15 +158,15 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
               <div className="macro-label">{t("targetKcalLabel")}</div>
             </div>
             <div className="macro">
-              <div className="macro-num">{targets.protein}</div>
+              <div className="macro-num">{targets.protein}g</div>
               <div className="macro-label">{t("proteinLabel")}</div>
             </div>
             <div className="macro">
-              <div className="macro-num">{targets.carb}</div>
+              <div className="macro-num">{targets.carb}g</div>
               <div className="macro-label">{t("carbLabel")}</div>
             </div>
             <div className="macro">
-              <div className="macro-num">{targets.fat}</div>
+              <div className="macro-num">{targets.fat}g</div>
               <div className="macro-label">{t("fatLabel")}</div>
             </div>
           </div>
@@ -177,7 +177,96 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
         )}
       </form>
 
-
+      <div className="stat-row" style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: 12 }}>{t("selectDate") || "Select Date"}</label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{ width: "100%", marginTop: 4 }}
+          />
+        </div>
+        <div style={{ position: "relative", width: "40px" }}>
+          <button
+            onClick={(e) => {
+              const menu = e.currentTarget.nextElementSibling;
+              menu.style.display = menu.style.display === "block" ? "none" : "block";
+            }}
+            style={{
+              width: "40px",
+              height: "40px",
+              padding: "0",
+              border: "none",
+              borderRadius: "6px",
+              background: "#ff9500",
+              cursor: "pointer",
+              fontSize: "20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            🔻
+          </button>
+          
+          <div
+            data-sort-menu
+            style={{
+              position: "absolute",
+              top: "45px",
+              right: "0",
+              background: "#fff",
+              border: "1px solid #ddd",
+              borderRadius: "6px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              display: "none",
+              zIndex: "1000",
+              minWidth: "140px"
+            }}
+          >
+            <button
+              onClick={() => {
+                setSortOrder("newest");
+                document.querySelector('[data-sort-menu]').style.display = "none";
+              }}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                border: "none",
+                background: sortOrder === "newest" ? "#f0f0f0" : "transparent",
+                cursor: "pointer",
+                fontSize: "13px",
+                textAlign: "left",
+                color: "#333",
+                borderRadius: "6px 6px 0 0"
+              }}
+            >
+              ⬇️ Newest First
+            </button>
+            <button
+              onClick={() => {
+                setSortOrder("oldest");
+                document.querySelector('[data-sort-menu]').style.display = "none";
+              }}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                border: "none",
+                borderTop: "1px solid #eee",
+                background: sortOrder === "oldest" ? "#f0f0f0" : "transparent",
+                cursor: "pointer",
+                fontSize: "13px",
+                textAlign: "left",
+                color: "#333",
+                borderRadius: "0 0 6px 6px"
+              }}
+            >
+              ⬆️ Oldest First
+            </button>
+          </div>
+        </div>
+      </div>
 
       <div style={{
         display: "flex",
@@ -198,10 +287,10 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
             Calories Label
           </div>
         </div>
-
+        
         {/* Separator */}
         <div style={{ width: "1px", height: "80px", background: "#8a92a8", opacity: 0.5 }} />
-
+        
         {/* Right side - Macros */}
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
@@ -236,53 +325,9 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
         </button>
       </form>
 
-
-      <div className="stat-row" style={{ display: "flex", gap: "12px", alignItems: "flex-center" }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ fontSize: 12 }}>{t("selectDate") || "Select Date"}</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={{ width: "100%", marginTop: 4 }}
-          />
-        </div>
-
-        {/* <div style={{ flex: 1 }}>
-          <label style={{ fontSize: 12 }}>Sort</label>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-            style={{ width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: "4px", border: "1px solid #ddd" }}
-          >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-          </select>
-        </div> */}
-
-      </div>
-      <select
-        value={sortOrder}
-        onChange={(e) => setSortOrder(e.target.value)}
-        style={{
-          width: "45px",
-          height: "40px",
-          padding: "0 2px",
-          border: "none",
-          borderRadius: "6px",
-          background: "#ff9500",
-          color: "#fff",
-          cursor: "pointer",
-          fontSize: "20px",
-          textAlign: "center"
-        }}
-      >
-        <option value="newest">⬇️</option>
-        <option value="oldest">⬆️</option>
-      </select>
       <div style={{ marginTop: "20px", marginBottom: "8px" }}>
         <span style={{ fontSize: "12px", fontWeight: "600", color: "#666" }}>
-          {t("History") || "Meal Log"}
+          {t("mealsLog") || "Meal Log"}
         </span>
       </div>
 
@@ -291,31 +336,31 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
       ) : (
         <>
           {sortedMeals.map((m) => (
-            <div key={m.id} className="card">
-              <div className="row between">
-                <div style={{ flex: 1 }}>
-                  <div className="card-title">{m.name}</div>
-                  <div className="card-meta">
-                    {m.date} · {m.calories} kcal
+              <div key={m.id} className="card">
+                <div className="row between">
+                  <div style={{ flex: 1 }}>
+                    <div className="card-title">{m.name}</div>
+                    <div className="card-meta">
+                      {m.date} · {m.calories} kcal
+                    </div>
+                    <div className="card-meta">
+                      {m.protein !== undefined && m.protein !== null && `Protein: ${m.protein}g`}
+                      {m.carb !== undefined && m.carb !== null && ` | Carb: ${m.carb}g`}
+                      {m.fat !== undefined && m.fat !== null && ` | Fat: ${m.fat}g`}
+                    </div>
                   </div>
-                  <div className="card-meta">
-                    {m.protein !== undefined && m.protein !== null && `Protein: ${m.protein}g`}
-                    {m.carb !== undefined && m.carb !== null && ` | Carb: ${m.carb}g`}
-                    {m.fat !== undefined && m.fat !== null && ` | Fat: ${m.fat}g`}
-                  </div>
+                  <button
+                    className="icon-btn"
+                    onClick={() => remove(m.id)}
+                    disabled={busyIds.has(m.id)}
+                    aria-label={t("delete")}
+                  >
+                    ✕
+                  </button>
                 </div>
-                <button
-                  className="icon-btn"
-                  onClick={() => remove(m.id)}
-                  disabled={busyIds.has(m.id)}
-                  aria-label={t("delete")}
-                >
-                  ✕
-                </button>
               </div>
-            </div>
-          ))}
-
+            ))}
+          
         </>
       )}
     </>
