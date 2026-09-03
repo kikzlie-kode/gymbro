@@ -64,7 +64,7 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
       const protein = fd.get("protein") ? Number(fd.get("protein")) : null;
       const carb = fd.get("carb") ? Number(fd.get("carb")) : null;
       const fat = fd.get("fat") ? Number(fd.get("fat")) : null;
-      
+
       await api.createMeal({
         name: fd.get("name"),
         calories: Number(fd.get("calories")),
@@ -96,9 +96,9 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
   }
 
   const todayCal = meals.filter((m) => m.date === today).reduce((sum, m) => sum + (m.calories || 0), 0);
-  
+
   const selectedMeals = meals.filter((m) => m.date === selectedDate);
-  
+
   // Sort meals by createdAt
   const getSortedMeals = () => {
     const sorted = [...selectedMeals];
@@ -108,14 +108,14 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
       return sorted.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
     }
   };
-  
+
   const sortedMeals = getSortedMeals();
-  
+
   const totalCal = sortedMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
   const totalProtein = sortedMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
   const totalCarb = sortedMeals.reduce((sum, m) => sum + (m.carb || 0), 0);
   const totalFat = sortedMeals.reduce((sum, m) => sum + (m.fat || 0), 0);
-  
+
   const hasProfile = Boolean(profile.weightKg);
   const targets = hasProfile ? calcTargets(profile) : null;
 
@@ -177,28 +177,7 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
         )}
       </form>
 
-      <div className="stat-row" style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ fontSize: 12 }}>{t("selectDate") || "Select Date"}</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={{ width: "100%", marginTop: 4 }}
-          />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label style={{ fontSize: 12 }}>Sort</label>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-            style={{ width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: "4px", border: "1px solid #ddd" }}
-          >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-          </select>
-        </div>
-      </div>
+
 
       <div style={{
         display: "flex",
@@ -219,10 +198,10 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
             Calories Label
           </div>
         </div>
-        
+
         {/* Separator */}
         <div style={{ width: "1px", height: "80px", background: "#8a92a8", opacity: 0.5 }} />
-        
+
         {/* Right side - Macros */}
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
@@ -237,6 +216,29 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
             <span style={{ fontSize: "13px", color: "#8a92a8", textTransform: "uppercase", letterSpacing: "0.5px" }}>Fat</span>
             <span style={{ fontSize: "20px", fontWeight: "bold", color: "#ff9500" }}>{totalFat.toFixed(2)}</span>
           </div>
+        </div>
+      </div>
+      
+      <div className="stat-row" style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: 12 }}>{t("selectDate") || "Select Date"}</label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{ width: "100%", marginTop: 4 }}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: 12 }}>Sort</label>
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            style={{ width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: "4px", border: "1px solid #ddd" }}
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+          </select>
         </div>
       </div>
 
@@ -268,31 +270,31 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
       ) : (
         <>
           {sortedMeals.map((m) => (
-              <div key={m.id} className="card">
-                <div className="row between">
-                  <div style={{ flex: 1 }}>
-                    <div className="card-title">{m.name}</div>
-                    <div className="card-meta">
-                      {m.date} · {m.calories} kcal
-                    </div>
-                    <div className="card-meta">
-                      {m.protein !== undefined && m.protein !== null && `Protein: ${m.protein}g`}
-                      {m.carb !== undefined && m.carb !== null && ` | Carb: ${m.carb}g`}
-                      {m.fat !== undefined && m.fat !== null && ` | Fat: ${m.fat}g`}
-                    </div>
+            <div key={m.id} className="card">
+              <div className="row between">
+                <div style={{ flex: 1 }}>
+                  <div className="card-title">{m.name}</div>
+                  <div className="card-meta">
+                    {m.date} · {m.calories} kcal
                   </div>
-                  <button
-                    className="icon-btn"
-                    onClick={() => remove(m.id)}
-                    disabled={busyIds.has(m.id)}
-                    aria-label={t("delete")}
-                  >
-                    ✕
-                  </button>
+                  <div className="card-meta">
+                    {m.protein !== undefined && m.protein !== null && `Protein: ${m.protein}g`}
+                    {m.carb !== undefined && m.carb !== null && ` | Carb: ${m.carb}g`}
+                    {m.fat !== undefined && m.fat !== null && ` | Fat: ${m.fat}g`}
+                  </div>
                 </div>
+                <button
+                  className="icon-btn"
+                  onClick={() => remove(m.id)}
+                  disabled={busyIds.has(m.id)}
+                  aria-label={t("delete")}
+                >
+                  ✕
+                </button>
               </div>
-            ))}
-          
+            </div>
+          ))}
+
         </>
       )}
     </>
