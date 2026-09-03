@@ -158,15 +158,15 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
               <div className="macro-label">{t("targetKcalLabel")}</div>
             </div>
             <div className="macro">
-              <div className="macro-num">{targets.protein}g</div>
+              <div className="macro-num">{targets.protein}</div>
               <div className="macro-label">{t("proteinLabel")}</div>
             </div>
             <div className="macro">
-              <div className="macro-num">{targets.carb}g</div>
+              <div className="macro-num">{targets.carb}</div>
               <div className="macro-label">{t("carbLabel")}</div>
             </div>
             <div className="macro">
-              <div className="macro-num">{targets.fat}g</div>
+              <div className="macro-num">{targets.fat}</div>
               <div className="macro-label">{t("fatLabel")}</div>
             </div>
           </div>
@@ -247,7 +247,8 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
             style={{ width: "100%", marginTop: 4 }}
           />
         </div>
-        <div style={{ flex: 1 }}>
+
+        {/* <div style={{ flex: 1 }}>
           <label style={{ fontSize: 12 }}>Sort</label>
           <select
             value={sortOrder}
@@ -257,12 +258,42 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
             <option value="newest">Newest First</option>
             <option value="oldest">Oldest First</option>
           </select>
+        </div> */}
+        <div style={{ display: "flex", gap: "8px", alignItems: "flex-end" }}>
+          <button
+            onClick={() => setSortOrder("newest")}
+            title="Sort Newest First"
+            style={{
+              padding: "6px 10px",
+              background: sortOrder === "newest" ? "#ff9500" : "#e0e0e0",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "16px"
+            }}
+          >
+            ⬇️
+          </button>
+          <button
+            onClick={() => setSortOrder("oldest")}
+            title="Sort Oldest First"
+            style={{
+              padding: "6px 10px",
+              background: sortOrder === "oldest" ? "#ff9500" : "#e0e0e0",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "16px"
+            }}
+          >
+            ⬆️
+          </button>
         </div>
       </div>
 
       <div style={{ marginTop: "20px", marginBottom: "8px" }}>
         <span style={{ fontSize: "12px", fontWeight: "600", color: "#666" }}>
-          {t("mealsLog") || "Meal Log"}
+          {t("History") || "Meal Log"}
         </span>
       </div>
 
