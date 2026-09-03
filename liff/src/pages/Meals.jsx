@@ -218,7 +218,25 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
           </div>
         </div>
       </div>
-      
+
+      <form className="card" onSubmit={handleSubmit}>
+        <span className="card-eyebrow">{t("mealsEyebrow")}</span>
+        <input name="name" placeholder={t("foodPlaceholder")} required />
+        <div className="row">
+          <input name="date" type="date" defaultValue={today} required />
+          <input name="calories" type="number" placeholder={t("caloriesPlaceholder")} required />
+        </div>
+        <div className="row">
+          <input name="protein" type="number" step="0.1" placeholder="Protein (g)" />
+          <input name="carb" type="number" step="0.1" placeholder="Carb (g)" />
+          <input name="fat" type="number" step="0.1" placeholder="Fat (g)" />
+        </div>
+        <button className="primary" type="submit" style={{ width: "100%" }} disabled={submitting}>
+          {t("saveMeal")}
+        </button>
+      </form>
+
+
       <div className="stat-row" style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
         <div style={{ flex: 1 }}>
           <label style={{ fontSize: 12 }}>{t("selectDate") || "Select Date"}</label>
@@ -241,23 +259,6 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
           </select>
         </div>
       </div>
-
-      <form className="card" onSubmit={handleSubmit}>
-        <span className="card-eyebrow">{t("mealsEyebrow")}</span>
-        <input name="name" placeholder={t("foodPlaceholder")} required />
-        <div className="row">
-          <input name="date" type="date" defaultValue={today} required />
-          <input name="calories" type="number" placeholder={t("caloriesPlaceholder")} required />
-        </div>
-        <div className="row">
-          <input name="protein" type="number" step="0.1" placeholder="Protein (g)" />
-          <input name="carb" type="number" step="0.1" placeholder="Carb (g)" />
-          <input name="fat" type="number" step="0.1" placeholder="Fat (g)" />
-        </div>
-        <button className="primary" type="submit" style={{ width: "100%" }} disabled={submitting}>
-          {t("saveMeal")}
-        </button>
-      </form>
 
       <div style={{ marginTop: "20px", marginBottom: "8px" }}>
         <span style={{ fontSize: "12px", fontWeight: "600", color: "#666" }}>
