@@ -33,6 +33,7 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
   const [submitting, setSubmitting] = useState(false);
   const [busyIds, setBusyIds] = useState(() => new Set());
   const [selectedDate, setSelectedDate] = useState(today);
+  const [sortOrder, setSortOrder] = useState("newest"); // newest | oldest
 
   async function handleProfileSubmit(e) {
     e.preventDefault();
@@ -97,10 +98,23 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
   const todayCal = meals.filter((m) => m.date === today).reduce((sum, m) => sum + (m.calories || 0), 0);
   
   const selectedMeals = meals.filter((m) => m.date === selectedDate);
-  const totalCal = selectedMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
-  const totalProtein = selectedMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
-  const totalCarb = selectedMeals.reduce((sum, m) => sum + (m.carb || 0), 0);
-  const totalFat = selectedMeals.reduce((sum, m) => sum + (m.fat || 0), 0);
+  
+  // Sort meals by createdAt
+  const getSortedMeals = () => {
+    const sorted = [...selectedMeals];
+    if (sortOrder === "newest") {
+      return sorted.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    } else {
+      return sorted.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    }
+  };
+  
+  const sortedMeals = getSortedMeals();
+  
+  const totalCal = sortedMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+  const totalProtein = sortedMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+  const totalCarb = sortedMeals.reduce((sum, m) => sum + (m.carb || 0), 0);
+  const totalFat = sortedMeals.reduce((sum, m) => sum + (m.fat || 0), 0);
   
   const hasProfile = Boolean(profile.weightKg);
   const targets = hasProfile ? calcTargets(profile) : null;
@@ -163,15 +177,26 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
         )}
       </form>
 
-      <div className="stat-row">
-        <div>
-          <label style={{ fontSize: 12 }}>{t("selectDate") || "Select Date:"}</label>
+      <div className="stat-row" style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: 12 }}>{t("selectDate") || "Select Date"}</label>
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             style={{ width: "100%", marginTop: 4 }}
           />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: 12 }}>Sort</label>
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            style={{ width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: "4px", border: "1px solid #ddd" }}
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+          </select>
         </div>
       </div>
 
@@ -238,13 +263,11 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
         </span>
       </div>
 
-      {meals.filter((m) => m.date === selectedDate).length === 0 ? (
+      {sortedMeals.length === 0 ? (
         <div className="empty">{t("emptyMeals")}</div>
       ) : (
         <>
-          {meals
-            .filter((m) => m.date === selectedDate)
-            .map((m) => (
+          {sortedMeals.map((m) => (
               <div key={m.id} className="card">
                 <div className="row between">
                   <div style={{ flex: 1 }}>
