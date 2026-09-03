@@ -261,36 +261,25 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
         </div> */}
 
       </div>
-      <div style={{ display: "flex", gap: "8px", alignItems: "flex-end" }}>
-        <button
-          onClick={() => setSortOrder("newest")}
-          title="Sort Newest First"
-          style={{
-            padding: "6px 10px",
-            background: sortOrder === "newest" ? "#ff9500" : "#e0e0e0",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "16px"
-          }}
-        >
-          ⬇️
-        </button>
-        <button
-          onClick={() => setSortOrder("oldest")}
-          title="Sort Oldest First"
-          style={{
-            padding: "6px 10px",
-            background: sortOrder === "oldest" ? "#ff9500" : "#e0e0e0",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "16px"
-          }}
-        >
-          ⬆️
-        </button>
-      </div>
+      <select
+        value={sortOrder}
+        onChange={(e) => setSortOrder(e.target.value)}
+        style={{
+          width: "45px",
+          height: "40px",
+          padding: "0 2px",
+          border: "none",
+          borderRadius: "6px",
+          background: "#ff9500",
+          color: "#fff",
+          cursor: "pointer",
+          fontSize: "20px",
+          textAlign: "center"
+        }}
+      >
+        <option value="newest">⬇️</option>
+        <option value="oldest">⬆️</option>
+      </select>
       <div style={{ marginTop: "20px", marginBottom: "8px" }}>
         <span style={{ fontSize: "12px", fontWeight: "600", color: "#666" }}>
           {t("History") || "Meal Log"}
