@@ -10,7 +10,7 @@ import { useSettings } from "./i18n.jsx";
 
 const LIFF_ID = import.meta.env.VITE_LIFF_ID || "2010843483-9zepqJaU";
 const today = new Date().toISOString().slice(0, 10);
-const isDarkMode = theme === "dark";
+
 
 const ICONS = {
   today: (
@@ -76,6 +76,8 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   // const [summary, setSummary] = useState(null);
   const [customPresets, setCustomPresets] = useState(null);
+
+  const isDarkMode = theme === "dark";
 
   useEffect(() => {
     (async () => {
@@ -209,49 +211,49 @@ export default function App() {
           zIndex: 0
         }}
       />
-      
+
       {/* Content wrapper */}
       <div style={{ position: "relative", zIndex: 1 }}>
         <>
-      <header className="topbar">
-        <span className="logo">
-          GYM<span className="dot">BRO</span>
-        </span>
-        <div className="topbar-actions">
-          <button className="chip-btn" onClick={toggleLang} aria-label="Switch language">
-            {lang === "th" ? "EN" : "TH"}
-          </button>
-          <button className="chip-btn icon" onClick={toggleTheme} aria-label="Switch theme">
-            {theme === "light" ? MOON_ICON : SUN_ICON}
-          </button>
-        </div>
-      </header>
-      <main>
-        {/* All data is fetched once at boot (see Splash above); tabs just render
-            from that shared state, so switching between them never re-fetches. */}
-        {Object.entries(TABS).map(([key, tab]) =>
-          visitedTabs.has(key) ? (
-            <div key={key} style={{ display: activeTab === key ? "block" : "none" }}>
-              <Suspense fallback={<div className="empty">{t("loading")}</div>}>
-                <tab.Component {...tab.props} initialTodoId={initialTodoId} />
-              </Suspense>
+          <header className="topbar">
+            <span className="logo">
+              GYM<span className="dot">BRO</span>
+            </span>
+            <div className="topbar-actions">
+              <button className="chip-btn" onClick={toggleLang} aria-label="Switch language">
+                {lang === "th" ? "EN" : "TH"}
+              </button>
+              <button className="chip-btn icon" onClick={toggleTheme} aria-label="Switch theme">
+                {theme === "light" ? MOON_ICON : SUN_ICON}
+              </button>
             </div>
-          ) : null
-        )}
-      </main>
-      <nav className="tabbar">
-        {Object.entries(TABS).map(([key, tab]) => (
-          <button
-            key={key}
-            className={activeTab === key ? "active" : ""}
-            onClick={() => switchTab(key)}
-          >
-            {ICONS[key]}
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-    </>
+          </header>
+          <main>
+            {/* All data is fetched once at boot (see Splash above); tabs just render
+            from that shared state, so switching between them never re-fetches. */}
+            {Object.entries(TABS).map(([key, tab]) =>
+              visitedTabs.has(key) ? (
+                <div key={key} style={{ display: activeTab === key ? "block" : "none" }}>
+                  <Suspense fallback={<div className="empty">{t("loading")}</div>}>
+                    <tab.Component {...tab.props} initialTodoId={initialTodoId} />
+                  </Suspense>
+                </div>
+              ) : null
+            )}
+          </main>
+          <nav className="tabbar">
+            {Object.entries(TABS).map(([key, tab]) => (
+              <button
+                key={key}
+                className={activeTab === key ? "active" : ""}
+                onClick={() => switchTab(key)}
+              >
+                {ICONS[key]}
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </>
       </div>
     </div>
   );
