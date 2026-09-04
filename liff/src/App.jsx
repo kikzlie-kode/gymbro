@@ -208,7 +208,7 @@ export default function App() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: isDarkMode ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.5)",
+          background: isDarkMode ? "rgba(0, 0, 0, 0.3)" : "rgba(255, 255, 255, 0.3)",
           pointerEvents: "none",
           zIndex: 0
         }}
