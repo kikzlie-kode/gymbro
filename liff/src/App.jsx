@@ -5,6 +5,8 @@ import LogPage from "./pages/Log.jsx";
 import Meals from "./pages/Meals.jsx";
 import { api } from "./api/client.js";
 import { useSettings } from "./i18n.jsx";
+import bgDark from "./img/bg_dark.png";
+import bgLight from "./img/bg_light.png";
 
 // const Summary = lazy(() => import("./pages/Summary.jsx"));
 
@@ -191,7 +193,7 @@ export default function App() {
     <div
       style={{
         minHeight: "100vh",
-        backgroundImage: `url(${isDarkMode ? './src/img/bg_dark.png' : './src/img/bg_light.png'})`,
+        backgroundImage: `url(${isDarkMode ? bgDark : bgLight})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundAttachment: "fixed",
