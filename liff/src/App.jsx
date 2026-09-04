@@ -185,7 +185,33 @@ export default function App() {
   }
 
   return (
-    <>
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundImage: `url(${isDarkMode ? './src/img/bg_dark.png' : './src/img/bg_light.png'})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+        position: "relative"
+      }}
+    >
+      {/* Semi-transparent overlay */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: isDarkMode ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.5)",
+          pointerEvents: "none",
+          zIndex: 0
+        }}
+      />
+      
+      {/* Content wrapper */}
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <>
       <header className="topbar">
         <span className="logo">
           GYM<span className="dot">BRO</span>
@@ -225,5 +251,7 @@ export default function App() {
         ))}
       </nav>
     </>
+      </div>
+    </div>
   );
 }
