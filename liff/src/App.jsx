@@ -6,7 +6,7 @@ import Meals from "./pages/Meals.jsx";
 import { api } from "./api/client.js";
 import { useSettings } from "./i18n.jsx";
 
-const Summary = lazy(() => import("./pages/Summary.jsx"));
+// const Summary = lazy(() => import("./pages/Summary.jsx"));
 
 const LIFF_ID = import.meta.env.VITE_LIFF_ID || "2010843483-9zepqJaU";
 const today = new Date().toISOString().slice(0, 10);
@@ -28,11 +28,11 @@ const ICONS = {
       <path d="M7 3v7a2 2 0 0 0 4 0V3M9 3v18M17 3c-1.5 0-3 1.5-3 4v4h3M17 3v18" />
     </svg>
   ),
-  summary: (
-    <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 20V10M12 20V4M20 20v-7" />
-    </svg>
-  ),
+  // summary: (
+  //   <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  //     <path d="M4 20V10M12 20V4M20 20v-7" />
+  //   </svg>
+  // ),
 };
 
 const SUN_ICON = (
@@ -73,7 +73,7 @@ export default function App() {
   const [logs, setLogs] = useState(null);
   const [meals, setMeals] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [summary, setSummary] = useState(null);
+  // const [summary, setSummary] = useState(null);
   const [customPresets, setCustomPresets] = useState(null);
 
   useEffect(() => {
@@ -103,14 +103,14 @@ export default function App() {
         api.getLogs(),
         api.getMeals(),
         api.getProfile(),
-        api.getSummary(30),
+        // api.getSummary(30),
         api.getPresets(),
       ]);
       setTodos(todosRes);
       setLogs(logsRes);
       setMeals(mealsRes);
       setProfile(profileRes);
-      setSummary(summaryRes);
+      // setSummary(summaryRes);
       setCustomPresets(presetsRes);
       setBootStatus("ready");
     } catch (err) {
@@ -128,7 +128,7 @@ export default function App() {
   const reloadLogs = async () => setLogs(await api.getLogs());
   const reloadMeals = async () => setMeals(await api.getMeals());
   const reloadProfile = async () => setProfile(await api.getProfile());
-  const reloadSummary = async () => setSummary(await api.getSummary(30));
+  // const reloadSummary = async () => setSummary(await api.getSummary(30));
   const reloadPresets = async () => setCustomPresets(await api.getPresets());
 
   function switchTab(key) {
@@ -144,7 +144,7 @@ export default function App() {
         todos,
         reload: reloadTodos,
         reloadLogs,
-        reloadSummary,
+        // reloadSummary,
         customPresets,
         reloadPresets,
       },
@@ -155,7 +155,7 @@ export default function App() {
       Component: Meals,
       props: { meals, profile, reload: reloadMeals, reloadProfile },
     },
-    summary: { label: t("tabSummary"), Component: Summary, props: { summary } },
+    // summary: { label: t("tabSummary"), Component: Summary, props: { summary } },
   };
 
   if (status === "connecting") {
