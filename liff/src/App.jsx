@@ -10,6 +10,7 @@ import { useSettings } from "./i18n.jsx";
 
 const LIFF_ID = import.meta.env.VITE_LIFF_ID || "2010843483-9zepqJaU";
 const today = new Date().toISOString().slice(0, 10);
+const isDarkMode = theme === "dark";
 
 const ICONS = {
   today: (
