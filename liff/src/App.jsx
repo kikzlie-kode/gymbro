@@ -69,7 +69,7 @@ export default function App() {
   const [visitedTabs, setVisitedTabs] = useState(() => new Set(["today"]));
   const [initialTodoId, setInitialTodoId] = useState(null);
   const { t, lang, toggleLang, theme, toggleTheme } = useSettings();
-
+  const isDarkMode = theme === "dark";
   const [todos, setTodos] = useState(null);
   const [logs, setLogs] = useState(null);
   const [meals, setMeals] = useState(null);
@@ -77,7 +77,7 @@ export default function App() {
   // const [summary, setSummary] = useState(null);
   const [customPresets, setCustomPresets] = useState(null);
 
-  const isDarkMode = theme === "dark";
+
 
   useEffect(() => {
     (async () => {
