@@ -196,6 +196,7 @@ export default function Meals({ meals, profile, reload, reloadProfile }) {
             style={{
               width: "40px",
               height: "40px",
+              marginBottom: "8px",
               padding: "0",
               border: "none",
               borderRadius: "6px",
