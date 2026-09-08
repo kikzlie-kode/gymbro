@@ -214,7 +214,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
       }
 
       const exercises = isBuiltInSet
-        ? BUILT_IN_SET_EXERCISES[todo.title][lang]
+        ? (BUILT_IN_SET_EXERCISES[todo.title]?.[lang] || [])
         : (todo.exercises || []);
 
       const isSet = exercises.length > 0;
