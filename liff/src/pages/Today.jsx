@@ -75,7 +75,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     if (!choice) return [];
 
     if (BUILT_IN_SETS.includes(choice)) {
-      return BUILT_IN_SET_EXERCISES[choice][lang] || [];
+      return BUILT_IN_SET_EXERCISES[choice]?.[lang] || [];
     }
 
     const preset = customPresets?.find((p) => p.id === choice);
