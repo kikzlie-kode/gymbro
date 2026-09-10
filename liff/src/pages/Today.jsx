@@ -514,7 +514,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
 
           const exercises = isBuiltInSet
             ? BUILT_IN_SET_EXERCISES[td.title]?.[lang] || []
-            : td.exercises?.length
+            : (td.exercises && td.exercises.length > 0)
               ? td.exercises
               : customPreset?.exercises || [];
 
