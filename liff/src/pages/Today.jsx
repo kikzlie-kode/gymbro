@@ -6,7 +6,7 @@ const today = new Date().toISOString().slice(0, 10);
 const BUILT_IN_SETS = ["HIIT", "Cardio", "Weight Training"];
 const EMPTY_SET = new Set();
 
-export default function Today({ todos, reload, reloadLogs, reloadSummary, customPresets, reloadPresets }) {
+export default function Today({ todos, reload, reloadLogs, reloadSummary, customPresets = [], reloadPresets }) {
   const [titleMode, setTitleModeRaw] = useState("manual"); // manual | set
   const [submitting, setSubmitting] = useState(false);
   const [busyIds, setBusyIds] = useState(() => new Set());

@@ -72,12 +72,12 @@ export default function App() {
   const [initialTodoId, setInitialTodoId] = useState(null);
   const { t, lang, toggleLang, theme, toggleTheme } = useSettings();
   const isDarkMode = theme === "dark";
-  const [todos, setTodos] = useState(null);
-  const [logs, setLogs] = useState(null);
-  const [meals, setMeals] = useState(null);
+  const [todos, setTodos] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [meals, setMeals] = useState([]);
   const [profile, setProfile] = useState(null);
   // const [summary, setSummary] = useState(null);
-  const [customPresets, setCustomPresets] = useState(null);
+  const [customPresets, setCustomPresets] = useState([]);
 
 
 
