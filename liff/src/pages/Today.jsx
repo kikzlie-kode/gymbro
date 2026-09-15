@@ -532,7 +532,19 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
 
                   return (
                     <div className="set-detail">
-                      <span className="card-eyebrow">{title}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span className="card-eyebrow">{title}</span>
+                        {!BUILT_IN_SETS.includes(setChoice) && selectedPreset && (
+                          <button
+                            type="button"
+                            className="ghost"
+                            onClick={() => openEditPreset(selectedPreset)}
+                            style={{ fontSize: "12px", padding: "4px 8px" }}
+                          >
+                            ✏️ Edit
+                          </button>
+                        )}
+                      </div>
 
                       <div className="exercise-table no-check">
                         <div className="col-head">{t("exNameHead")}</div>
@@ -647,9 +659,9 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   <div className="col-head">
                     {t("exSetsHead")}
                   </div>
-                  {/* <div className="col-head">
+                  <div className="col-head">
                     Focus
-                  </div> */}
+                  </div>
 
                   {exercises.map((ex, i) => (
                     <Fragment key={`${ex.name}-${i}`}>
@@ -713,9 +725,9 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                         {ex.sets || "-"}
                       </span>
 
-                      {/* <span>
+                      <span>
                         {ex.focus || "-"}
-                      </span> */}
+                      </span>
 
                     </Fragment>
                   ))}
@@ -760,6 +772,72 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Preset Modal */}
+      {editingPresetId && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "flex-end",
+          zIndex: 1000
+        }}>
+          <div style={{
+            width: "100%",
+            background: "#fff",
+            borderRadius: "12px 12px 0 0",
+            padding: "20px",
+            maxHeight: "80vh",
+            overflowY: "auto"
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: "16px" }}>Edit Preset</h3>
+            
+            <input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Preset Name"
+              style={{ width: "100%", marginBottom: "12px", padding: "8px", boxSizing: "border-box" }}
+            />
+            
+            <input
+              value={editType}
+              onChange={(e) => setEditType(e.target.value)}
+              placeholder="Type (optional)"
+              style={{ width: "100%", marginBottom: "16px", padding: "8px", boxSizing: "border-box" }}
+            />
+            
+            <div style={{ marginBottom: "16px" }}>
+              <p style={{ fontSize: "12px", fontWeight: "600", marginBottom: "8px" }}>Exercises:</p>
+              {editExercises.map((ex, idx) => (
+                <div key={idx} style={{ fontSize: "13px", padding: "8px 0", borderBottom: "1px solid #eee" }}>
+                  {ex.name} {ex.sets && `• ${ex.sets}x${ex.reps || "?"}`} {ex.weight && `• ${ex.weight}kg`} {ex.focus && `• ${ex.focus}`}
+                </div>
+              ))}
+            </div>
+            
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                className="primary"
+                onClick={handleSaveEditPreset}
+                style={{ flex: 1 }}
+              >
+                Save
+              </button>
+              <button
+                className="ghost"
+                onClick={closeEditPreset}
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
