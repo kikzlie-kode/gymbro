@@ -17,6 +17,12 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
   const [newSetType, setNewSetType] = useState("");
   const [creatingSet, setCreatingSet] = useState(false);
 
+  // Edit preset modal
+  const [editingPresetId, setEditingPresetId] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editType, setEditType] = useState("");
+  const [editExercises, setEditExercises] = useState([]);
+
 
   // Custom exercises for building a custom set
   const [customExercises, setCustomExercises] = useState([]);
@@ -639,6 +645,9 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   <div className="col-head">
                     {t("exSetsHead")}
                   </div>
+                  <div className="col-head">
+                    Focus
+                  </div>
 
                   {exercises.map((ex, i) => (
                     <Fragment key={`${ex.name}-${i}`}>
@@ -672,6 +681,10 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
 
                       <span>
                         {ex.sets || "-"}
+                      </span>
+
+                      <span>
+                        {ex.focus || "-"}
                       </span>
 
                     </Fragment>

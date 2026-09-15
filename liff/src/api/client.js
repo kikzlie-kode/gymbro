@@ -50,6 +50,11 @@ export const api = {
       })
     }),
   deletePreset: (id) => request(`/presets/${id}`, { method: "DELETE" }),
+  updatePreset: (id, data) =>
+    request(`/presets/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data)
+    }),
 
   getSummary: (days = 30) => request(`/summary?days=${days}`),
 };
