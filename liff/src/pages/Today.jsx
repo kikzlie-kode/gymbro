@@ -15,7 +15,15 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
   const [showCustomBox, setShowCustomBox] = useState(false);
   const [newSetName, setNewSetName] = useState("");
   const [newSetType, setNewSetType] = useState("");
+  const [newSetFocus, setNewSetFocus] = useState("");
   const [creatingSet, setCreatingSet] = useState(false);
+
+  // Edit preset modal
+  const [editingPresetId, setEditingPresetId] = useState(null);
+  const [editPresetName, setEditPresetName] = useState("");
+  const [editPresetType, setEditPresetType] = useState("");
+  const [editPresetFocus, setEditPresetFocus] = useState("");
+  const [editPresetExercises, setEditPresetExercises] = useState([]);
 
   // Custom exercises for building a custom set
   const [customExercises, setCustomExercises] = useState([]);
@@ -70,8 +78,37 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     setNewExerciseWeight("");
   }
 
-  function removeCustomExercise(index) {
-    setCustomExercises((prev) => prev.filter((_, i) => i !== index));
+  function openEditModal(preset) {
+    setEditingPresetId(preset.id);
+    setEditPresetName(preset.name);
+    setEditPresetType(preset.exerciseType || "");
+    setEditPresetFocus(preset.focus || "");
+    setEditPresetExercises(preset.exercises || []);
+  }
+
+  function closeEditModal() {
+    setEditingPresetId(null);
+    setEditPresetName("");
+    setEditPresetType("");
+    setEditPresetFocus("");
+    setEditPresetExercises([]);
+  }
+
+  async function handleSaveEditPreset() {
+    if (!editPresetName.trim()) return;
+    try {
+      // Update via API
+      await api.updatePreset(editingPresetId, {
+        name: editPresetName,
+        exerciseType: editPresetType || null,
+        focus: editPresetFocus || null,
+        exercises: editPresetExercises,
+      });
+      await reloadPresets();
+      closeEditModal();
+    } catch (err) {
+      console.error("Error saving preset:", err);
+    }
   }
 
   function getExercisesForSetChoice(choice) {
@@ -262,8 +299,9 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     setCreatingSet(true);
     try {
       const created = await api.createPreset(
-        name,
+        newSetName,
         newSetType || null,
+        newSetFocus || null,
         customExercises
       );
       await reloadPresets();
@@ -271,6 +309,8 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
       setShowCustomBox(false);
       setNewSetName("");
       setNewSetType("");
+      setNewSetFocus("");
+      setCustomExercises([]);
     } finally {
       setCreatingSet(false);
     }
@@ -361,6 +401,11 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   value={newSetType}
                   onChange={(e) => setNewSetType(e.target.value)}
                   placeholder={t("typeEmpty")}
+                />
+                <input
+                  value={newSetFocus}
+                  onChange={(e) => setNewSetFocus(e.target.value)}
+                  placeholder="Focus (e.g. Chest, Back, Legs)"
                 />
 
                 {/* Add exercises section */}
@@ -642,6 +687,79 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
             </div>
           );
         })
+      )}
+
+      {/* Edit Preset Modal */}
+      {editingPresetId && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "flex-end",
+          zIndex: 1000
+        }}>
+          <div style={{
+            width: "100%",
+            background: "#fff",
+            borderRadius: "12px 12px 0 0",
+            padding: "20px",
+            maxHeight: "80vh",
+            overflowY: "auto"
+          }}>
+            <h3 style={{ marginTop: 0 }}>Edit Preset</h3>
+            
+            <input
+              value={editPresetName}
+              onChange={(e) => setEditPresetName(e.target.value)}
+              placeholder="Set Name"
+              style={{ width: "100%", marginBottom: 8, padding: "8px" }}
+            />
+            
+            <input
+              value={editPresetType}
+              onChange={(e) => setEditPresetType(e.target.value)}
+              placeholder="Type"
+              style={{ width: "100%", marginBottom: 8, padding: "8px" }}
+            />
+            
+            <input
+              value={editPresetFocus}
+              onChange={(e) => setEditPresetFocus(e.target.value)}
+              placeholder="Focus (e.g. Chest, Back, Legs)"
+              style={{ width: "100%", marginBottom: 16, padding: "8px" }}
+            />
+            
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontSize: 12, fontWeight: 600 }}>Exercises:</p>
+              {editPresetExercises.map((ex, idx) => (
+                <div key={idx} style={{ fontSize: 13, padding: "8px 0", borderBottom: "1px solid #eee" }}>
+                  {ex.name} {ex.sets && `• ${ex.sets}x${ex.reps || "?"}`} {ex.weight && `• ${ex.weight}kg`}
+                </div>
+              ))}
+            </div>
+            
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                className="primary"
+                onClick={handleSaveEditPreset}
+                style={{ flex: 1 }}
+              >
+                Save
+              </button>
+              <button
+                className="ghost"
+                onClick={closeEditModal}
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

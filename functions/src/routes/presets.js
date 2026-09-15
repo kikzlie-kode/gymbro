@@ -14,6 +14,7 @@ router.post("/", async (req, res) => {
   const {
     name,
     exerciseType,
+    focus,
     exercises
   } = req.body;
 
@@ -25,17 +26,36 @@ router.post("/", async (req, res) => {
 
   const doc = {
     name: name.trim(),
-
     exerciseType: exerciseType || null,
-
+    focus: focus || null,
     exercises: Array.isArray(exercises)
       ? exercises
       : [],
-
     createdAt: new Date().toISOString(),
   };
   const ref = await presetsCol(req.userId).add(doc);
   res.status(201).json({ id: ref.id, ...doc });
+});
+
+// PATCH /api/presets/:id
+router.patch("/:id", async (req, res) => {
+  const {
+    name,
+    exerciseType,
+    focus,
+    exercises
+  } = req.body;
+
+  const updates = {
+    ...(name && { name: name.trim() }),
+    ...(exerciseType !== undefined && { exerciseType: exerciseType || null }),
+    ...(focus !== undefined && { focus: focus || null }),
+    ...(exercises && { exercises: Array.isArray(exercises) ? exercises : [] }),
+    updatedAt: new Date().toISOString(),
+  };
+
+  await presetsCol(req.userId).doc(req.params.id).set(updates, { merge: true });
+  res.json({ id: req.params.id, ...updates });
 });
 
 // DELETE /api/presets/:id
