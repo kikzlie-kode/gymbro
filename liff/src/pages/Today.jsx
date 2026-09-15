@@ -34,6 +34,8 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
 
   const [expandedIds, setExpandedIds] = useState(() => new Set());
   const [exerciseDone, setExerciseDone] = useState({}); // { [todoId]: Set(exerciseIndex) }
+  const [showFocusModal, setShowFocusModal] = useState(false);
+  const [selectedExerciseFocus, setSelectedExerciseFocus] = useState("");
 
   // เก็บรายละเอียด exercises ของแต่ละ todo
   const [todoExercises, setTodoExercises] = useState({});
@@ -674,8 +676,12 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                         style={{ display: "flex", alignItems: "center", gap: "6px" }}
                       >
                         {ex.name}
-                        <span
-                          title={`Focus: ${ex.focus || "N/A"}`}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedExerciseFocus(ex.focus || "Not specified");
+                            setShowFocusModal(true);
+                          }}
                           style={{
                             cursor: "pointer",
                             fontSize: "14px",
@@ -689,10 +695,14 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                             borderRadius: "50%",
                             border: "1px solid #ddd",
                             backgroundColor: "#f5f5f5",
+                            padding: "0",
+                            margin: "0",
+                            background: "none",
                           }}
+                          aria-label="Show focus info"
                         >
                           ℹ
-                        </span>
+                        </button>
                       </span>
 
                       <span>
@@ -715,6 +725,43 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
             </div>
           );
         })
+      )}
+
+      {/* Focus Info Modal */}
+      {showFocusModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: "#fff",
+            borderRadius: "12px",
+            padding: "24px",
+            maxWidth: "300px",
+            textAlign: "center",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)"
+          }}>
+            <h3 style={{ marginTop: 0 }}>Focus Area</h3>
+            <p style={{ fontSize: "18px", fontWeight: "600", color: "#ff9500", margin: "16px 0" }}>
+              {selectedExerciseFocus}
+            </p>
+            <button
+              className="primary"
+              onClick={() => setShowFocusModal(false)}
+              style={{ width: "100%", marginTop: "12px" }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
     </>
   );
