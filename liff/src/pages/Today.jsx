@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { api } from "../api/client.js";
 import { useSettings, BUILT_IN_SET_EXERCISES } from "../i18n.jsx";
 
@@ -82,34 +82,36 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     setNewExerciseFocus("");
   }
 
-  function openEditModal(preset) {
+  // Load presets on mount
+  useEffect(() => {
+    reloadPresets();
+  }, []);
+
+  function openEditPreset(preset) {
     setEditingPresetId(preset.id);
-    setEditPresetName(preset.name);
-    setEditPresetType(preset.exerciseType || "");
-    setEditPresetFocus(preset.focus || "");
-    setEditPresetExercises(preset.exercises || []);
+    setEditName(preset.name);
+    setEditType(preset.exerciseType || "");
+    setEditExercises(preset.exercises || []);
   }
 
-  function closeEditModal() {
+  function closeEditPreset() {
     setEditingPresetId(null);
-    setEditPresetName("");
-    setEditPresetType("");
-    setEditPresetFocus("");
-    setEditPresetExercises([]);
+    setEditName("");
+    setEditType("");
+    setEditExercises([]);
   }
 
   async function handleSaveEditPreset() {
-    if (!editPresetName.trim()) return;
+    if (!editName.trim()) return;
     try {
       // Update via API
       await api.updatePreset(editingPresetId, {
-        name: editPresetName,
-        exerciseType: editPresetType || null,
-        focus: editPresetFocus || null,
-        exercises: editPresetExercises,
+        name: editName,
+        exerciseType: editType || null,
+        exercises: editExercises,
       });
       await reloadPresets();
-      closeEditModal();
+      closeEditPreset();
     } catch (err) {
       console.error("Error saving preset:", err);
     }
