@@ -22,6 +22,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
   const [newExerciseName, setNewExerciseName] = useState("");
   const [newExerciseSets, setNewExerciseSets] = useState("");
   const [newExerciseReps, setNewExerciseReps] = useState("");
+  const [newExerciseWeight, setNewExerciseWeight] = useState("");
 
   const [expandedIds, setExpandedIds] = useState(() => new Set());
   const [exerciseDone, setExerciseDone] = useState({}); // { [todoId]: Set(exerciseIndex) }
@@ -60,11 +61,13 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
         name: newExerciseName,
         sets: newExerciseSets ? Number(newExerciseSets) : null,
         reps: newExerciseReps || null,
+        weight: newExerciseWeight ? Number(newExerciseWeight) : null,
       },
     ]);
     setNewExerciseName("");
     setNewExerciseSets("");
     setNewExerciseReps("");
+    setNewExerciseWeight("");
   }
 
   function removeCustomExercise(index) {
@@ -387,6 +390,14 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                       placeholder="Reps/set"
                       style={{ flex: 1 }}
                     />
+                    <input
+                      value={newExerciseWeight}
+                      onChange={(e) => setNewExerciseWeight(e.target.value)}
+                      placeholder="Weight (kg)"
+                      type="number"
+                      step="0.5"
+                      style={{ flex: 1 }}
+                    />
                     <button
                       type="button"
                       className="primary"
@@ -403,7 +414,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                       {customExercises.map((ex, idx) => (
                         <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
                           <span style={{ fontSize: 13 }}>
-                            {ex.name} {ex.sets && `• ${ex.sets}x${ex.reps || "?"}`}
+                            {ex.name} {ex.sets && `• ${ex.sets}x${ex.reps || "?"}`} {ex.weight && `• ${ex.weight}kg`}
                           </span>
                           <button
                             type="button"
