@@ -22,7 +22,12 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
   const [editName, setEditName] = useState("");
   const [editType, setEditType] = useState("");
   const [editExercises, setEditExercises] = useState([]);
-
+  const [editingExerciseIdx, setEditingExerciseIdx] = useState(null);
+  const [editExName, setEditExName] = useState("");
+  const [editExSets, setEditExSets] = useState("");
+  const [editExReps, setEditExReps] = useState("");
+  const [editExWeight, setEditExWeight] = useState("");
+  const [editExFocus, setEditExFocus] = useState("");
 
   // Custom exercises for building a custom set
   const [customExercises, setCustomExercises] = useState([]);
@@ -99,6 +104,72 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     setEditName("");
     setEditType("");
     setEditExercises([]);
+    setEditingExerciseIdx(null);
+    setEditExName("");
+    setEditExSets("");
+    setEditExReps("");
+    setEditExWeight("");
+    setEditExFocus("");
+  }
+
+  function startEditExercise(idx) {
+    const ex = editExercises[idx];
+    setEditingExerciseIdx(idx);
+    setEditExName(ex.name || "");
+    setEditExSets(ex.sets || "");
+    setEditExReps(ex.reps || "");
+    setEditExWeight(ex.weight || "");
+    setEditExFocus(ex.focus || "");
+  }
+
+  function cancelEditExercise() {
+    setEditingExerciseIdx(null);
+    setEditExName("");
+    setEditExSets("");
+    setEditExReps("");
+    setEditExWeight("");
+    setEditExFocus("");
+  }
+
+  function saveEditExercise() {
+    if (!editExName.trim()) return;
+    setEditExercises((prev) =>
+      prev.map((ex, idx) =>
+        idx === editingExerciseIdx
+          ? {
+              name: editExName,
+              sets: editExSets ? Number(editExSets) : null,
+              reps: editExReps || null,
+              weight: editExWeight ? Number(editExWeight) : null,
+              focus: editExFocus || null,
+            }
+          : ex
+      )
+    );
+    cancelEditExercise();
+  }
+
+  function removeEditExercise(idx) {
+    setEditExercises((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function addEditExercise() {
+    if (!editExName.trim()) return;
+    setEditExercises((prev) => [
+      ...prev,
+      {
+        name: editExName,
+        sets: editExSets ? Number(editExSets) : null,
+        reps: editExReps || null,
+        weight: editExWeight ? Number(editExWeight) : null,
+        focus: editExFocus || null,
+      },
+    ]);
+    setEditExName("");
+    setEditExSets("");
+    setEditExReps("");
+    setEditExWeight("");
+    setEditExFocus("");
   }
 
   async function handleSaveEditPreset() {
@@ -815,13 +886,139 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
               style={{ width: "100%", marginBottom: "16px", padding: "8px", boxSizing: "border-box" }}
             />
             
-            <div style={{ marginBottom: "16px" }}>
+            <div style={{ marginBottom: "16px", borderTop: "1px solid #e0e0e0", paddingTop: "12px" }}>
               <p style={{ fontSize: "12px", fontWeight: "600", marginBottom: "8px" }}>Exercises:</p>
+              
+              {/* Exercises List */}
               {editExercises.map((ex, idx) => (
-                <div key={idx} style={{ fontSize: "13px", padding: "8px 0", borderBottom: "1px solid #eee" }}>
-                  {ex.name} {ex.sets && `• ${ex.sets}x${ex.reps || "?"}`} {ex.weight && `• ${ex.weight}kg`} {ex.focus && `• ${ex.focus}`}
+                <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #eee" }}>
+                  <span style={{ fontSize: "13px", flex: 1 }}>
+                    {ex.name} {ex.sets && `• ${ex.sets}x${ex.reps || "?"}`} {ex.weight && `• ${ex.weight}kg`} {ex.focus && `• ${ex.focus}`}
+                  </span>
+                  <div style={{ display: "flex", gap: "4px" }}>
+                    <button
+                      type="button"
+                      className="ghost"
+                      onClick={() => startEditExercise(idx)}
+                      style={{ fontSize: "11px", padding: "2px 6px" }}
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost"
+                      onClick={() => removeEditExercise(idx)}
+                      style={{ fontSize: "11px", padding: "2px 6px", color: "#d32f2f" }}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               ))}
+
+              {/* Edit Exercise Form */}
+              {editingExerciseIdx !== null ? (
+                <div style={{ marginTop: "12px", padding: "12px", background: "#f5f5f5", borderRadius: "8px" }}>
+                  <p style={{ fontSize: "11px", fontWeight: "600", marginBottom: "8px" }}>Edit Exercise</p>
+                  <input
+                    value={editExName}
+                    onChange={(e) => setEditExName(e.target.value)}
+                    placeholder="Exercise Name"
+                    style={{ width: "100%", marginBottom: "8px", padding: "6px", boxSizing: "border-box", fontSize: "12px" }}
+                  />
+                  <input
+                    value={editExSets}
+                    onChange={(e) => setEditExSets(e.target.value)}
+                    placeholder="Sets"
+                    type="number"
+                    style={{ width: "48%", marginRight: "4%", marginBottom: "8px", padding: "6px", boxSizing: "border-box", fontSize: "12px" }}
+                  />
+                  <input
+                    value={editExReps}
+                    onChange={(e) => setEditExReps(e.target.value)}
+                    placeholder="Reps"
+                    style={{ width: "48%", marginBottom: "8px", padding: "6px", boxSizing: "border-box", fontSize: "12px" }}
+                  />
+                  <input
+                    value={editExWeight}
+                    onChange={(e) => setEditExWeight(e.target.value)}
+                    placeholder="Weight (kg)"
+                    type="number"
+                    step="0.5"
+                    style={{ width: "48%", marginRight: "4%", marginBottom: "8px", padding: "6px", boxSizing: "border-box", fontSize: "12px" }}
+                  />
+                  <input
+                    value={editExFocus}
+                    onChange={(e) => setEditExFocus(e.target.value)}
+                    placeholder="Focus (Chest, Back, etc)"
+                    style={{ width: "48%", marginBottom: "8px", padding: "6px", boxSizing: "border-box", fontSize: "12px" }}
+                  />
+                  <div style={{ display: "flex", gap: "4px" }}>
+                    <button
+                      type="button"
+                      className="primary"
+                      onClick={saveEditExercise}
+                      style={{ flex: 1, fontSize: "12px", padding: "6px" }}
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost"
+                      onClick={cancelEditExercise}
+                      style={{ flex: 1, fontSize: "12px", padding: "6px" }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Add New Exercise Form */
+                <div style={{ marginTop: "12px", padding: "12px", background: "#f5f5f5", borderRadius: "8px" }}>
+                  <p style={{ fontSize: "11px", fontWeight: "600", marginBottom: "8px" }}>Add Exercise</p>
+                  <input
+                    value={editExName}
+                    onChange={(e) => setEditExName(e.target.value)}
+                    placeholder="Exercise Name"
+                    style={{ width: "100%", marginBottom: "8px", padding: "6px", boxSizing: "border-box", fontSize: "12px" }}
+                  />
+                  <input
+                    value={editExSets}
+                    onChange={(e) => setEditExSets(e.target.value)}
+                    placeholder="Sets"
+                    type="number"
+                    style={{ width: "48%", marginRight: "4%", marginBottom: "8px", padding: "6px", boxSizing: "border-box", fontSize: "12px" }}
+                  />
+                  <input
+                    value={editExReps}
+                    onChange={(e) => setEditExReps(e.target.value)}
+                    placeholder="Reps"
+                    style={{ width: "48%", marginBottom: "8px", padding: "6px", boxSizing: "border-box", fontSize: "12px" }}
+                  />
+                  <input
+                    value={editExWeight}
+                    onChange={(e) => setEditExWeight(e.target.value)}
+                    placeholder="Weight (kg)"
+                    type="number"
+                    step="0.5"
+                    style={{ width: "48%", marginRight: "4%", marginBottom: "8px", padding: "6px", boxSizing: "border-box", fontSize: "12px" }}
+                  />
+                  <input
+                    value={editExFocus}
+                    onChange={(e) => setEditExFocus(e.target.value)}
+                    placeholder="Focus (Chest, Back, etc)"
+                    style={{ width: "48%", marginBottom: "8px", padding: "6px", boxSizing: "border-box", fontSize: "12px" }}
+                  />
+                  <button
+                    type="button"
+                    className="primary"
+                    onClick={addEditExercise}
+                    style={{ width: "100%", fontSize: "12px", padding: "6px" }}
+                  >
+                    + Add Exercise
+                  </button>
+                </div>
+              )}
             </div>
             
             <div style={{ display: "flex", gap: "8px" }}>
