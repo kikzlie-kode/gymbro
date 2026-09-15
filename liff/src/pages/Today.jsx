@@ -583,11 +583,18 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   ))}
                   {customPresets.length > 0 && (
                     <optgroup label={t("presetCustom")}>
-                      {customPresets.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
+                      {customPresets.map((p) => {
+                        const weights = p.exercises
+                          ?.filter(ex => ex.weight)
+                          .map(ex => `${ex.weight}kg`)
+                          .join(", ");
+                        const label = weights ? `${p.name} (${weights})` : p.name;
+                        return (
+                          <option key={p.id} value={p.id}>
+                            {label}
+                          </option>
+                        );
+                      })}
                     </optgroup>
                   )}
                   <option value="__custom__">{t("addCustomOption")}</option>
@@ -732,9 +739,9 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   <div className="col-head">
                     {t("exSetsHead")}
                   </div>
-                  {/* <div className="col-head">
+                  <div className="col-head">
                     Focus
-                  </div> */}
+                  </div>
 
                   {exercises.map((ex, i) => (
                     <Fragment key={`${ex.name}-${i}`}>
@@ -798,9 +805,9 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                         {ex.sets || "-"}
                       </span>
 
-                      {/* <span>
+                      <span>
                         {ex.focus || "-"}
-                      </span> */}
+                      </span>
 
                     </Fragment>
                   ))}
