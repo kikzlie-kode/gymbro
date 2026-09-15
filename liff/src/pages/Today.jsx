@@ -671,8 +671,28 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                             ? "done-text"
                             : ""
                         }
+                        style={{ display: "flex", alignItems: "center", gap: "6px" }}
                       >
                         {ex.name}
+                        <span
+                          title={`Focus: ${ex.focus || "N/A"}`}
+                          style={{
+                            cursor: "pointer",
+                            fontSize: "14px",
+                            color: "#666",
+                            fontWeight: "bold",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: "18px",
+                            height: "18px",
+                            borderRadius: "50%",
+                            border: "1px solid #ddd",
+                            backgroundColor: "#f5f5f5",
+                          }}
+                        >
+                          ℹ
+                        </span>
                       </span>
 
                       <span>
