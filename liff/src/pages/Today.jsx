@@ -740,9 +740,9 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   <div className="col-head">
                     {t("exSetsHead")}
                   </div>
-                  <div className="col-head">
+                  {/* <div className="col-head">
                     Focus
-                  </div>
+                  </div> */}
 
                   {exercises.map((ex, i) => (
                     <Fragment key={`${ex.name}-${i}`}>
@@ -806,9 +806,9 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                         {ex.sets || "-"}
                       </span>
 
-                      <span>
+                      {/* <span>
                         {ex.focus || "-"}
-                      </span>
+                      </span> */}
 
                     </Fragment>
                   ))}
