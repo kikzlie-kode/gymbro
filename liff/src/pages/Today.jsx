@@ -583,18 +583,11 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   ))}
                   {customPresets.length > 0 && (
                     <optgroup label={t("presetCustom")}>
-                      {customPresets.map((p) => {
-                        const weights = p.exercises
-                          ?.filter(ex => ex.weight)
-                          .map(ex => `${ex.weight}kg`)
-                          .join(", ");
-                        const label = weights ? `${p.name} (${weights})` : p.name;
-                        return (
-                          <option key={p.id} value={p.id}>
-                            {label}
-                          </option>
-                        );
-                      })}
+                      {customPresets.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
                     </optgroup>
                   )}
                   <option value="__custom__">{t("addCustomOption")}</option>
@@ -626,7 +619,13 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                         )}
                       </div>
 
-                      <div className="exercise-table no-check">
+                      <div className="exercise-table no-check" style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(4, 1fr)",
+                        gap: "12px",
+                        wordBreak: "break-word",
+                        whiteSpace: "normal"
+                      }}>
                         <div className="col-head">{t("exNameHead")}</div>
                         <div className="col-head">{t("exRepsHead")}</div>
                         <div className="col-head">{t("exSetsHead")}</div>
@@ -634,7 +633,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
 
                         {exercises.map((ex, index) => (
                           <Fragment key={`${ex.name}-${index}`}>
-                            <span>{ex.name}</span>
+                            <span style={{ wordBreak: "break-word" }}>{ex.name}</span>
                             <span>{ex.reps || "-"}</span>
                             <span>{ex.sets || "-"}</span>
                             <span>{ex.weight ? `${ex.weight}kg` : "-"}</span>
