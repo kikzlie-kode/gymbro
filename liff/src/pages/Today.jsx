@@ -41,6 +41,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
   const [exerciseDone, setExerciseDone] = useState({}); // { [todoId]: Set(exerciseIndex) }
   const [showFocusModal, setShowFocusModal] = useState(false);
   const [selectedExerciseFocus, setSelectedExerciseFocus] = useState("");
+  const [selectedExerciseWeight, setSelectedExerciseWeight] = useState(null);
 
   // เก็บรายละเอียด exercises ของแต่ละ todo
   const [todoExercises, setTodoExercises] = useState({});
@@ -773,6 +774,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                           type="button"
                           onClick={() => {
                             setSelectedExerciseFocus(ex.focus || "Not specified");
+                            setSelectedExerciseWeight(ex.weight || null);
                             setShowFocusModal(true);
                           }}
                           style={{
@@ -842,14 +844,30 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
             textAlign: "center",
             boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)"
           }}>
-            <h3 style={{ marginTop: 0 }}>Focus Area</h3>
-            <p style={{ fontSize: "18px", fontWeight: "600", color: "#ff9500", margin: "16px 0" }}>
-              {selectedExerciseFocus}
-            </p>
+            <h3 style={{ marginTop: 0, marginBottom: "20px" }}>Exercise Info</h3>
+            
+            {/* Focus Area */}
+            <div style={{ marginBottom: "16px" }}>
+              <p style={{ fontSize: "12px", fontWeight: "600", color: "#666", margin: "0 0 8px 0" }}>Focus Area</p>
+              <p style={{ fontSize: "18px", fontWeight: "600", color: "#ff9500", margin: 0 }}>
+                {selectedExerciseFocus}
+              </p>
+            </div>
+
+            {/* Weight */}
+            {selectedExerciseWeight && (
+              <div style={{ marginBottom: "16px", paddingTop: "16px", borderTop: "1px solid #e0e0e0" }}>
+                <p style={{ fontSize: "12px", fontWeight: "600", color: "#666", margin: "0 0 8px 0" }}>Weight</p>
+                <p style={{ fontSize: "24px", fontWeight: "700", color: "#333", margin: 0 }}>
+                  {selectedExerciseWeight}kg
+                </p>
+              </div>
+            )}
+
             <button
               className="primary"
               onClick={() => setShowFocusModal(false)}
-              style={{ width: "100%", marginTop: "12px" }}
+              style={{ width: "100%", marginTop: "16px" }}
             >
               Close
             </button>
