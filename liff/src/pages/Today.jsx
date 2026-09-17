@@ -41,6 +41,11 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
   const [exerciseDone, setExerciseDone] = useState({}); // { [todoId]: Set(exerciseIndex) }
   const [showFocusModal, setShowFocusModal] = useState(false);
   const [selectedExerciseFocus, setSelectedExerciseFocus] = useState("");
+  const [selectedExerciseWeight, setSelectedExerciseWeight] = useState(null);
+
+  // Edit exercise in add item
+  const [editingSessionExIdx, setEditingSessionExIdx] = useState(null);
+  const [sessionExercises, setSessionExercises] = useState({});
 
   // เก็บรายละเอียด exercises ของแต่ละ todo
   const [todoExercises, setTodoExercises] = useState({});
@@ -170,6 +175,13 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     setEditExReps("");
     setEditExWeight("");
     setEditExFocus("");
+  }
+
+  function updateSessionExerciseWeight(exName, weight) {
+    setSessionExercises((prev) => ({
+      ...prev,
+      [exName]: weight || null,
+    }));
   }
 
   async function handleSaveEditPreset() {
@@ -532,19 +544,36 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   {/* List of added exercises */}
                   {customExercises.length > 0 && (
                     <div style={{ marginTop: 12 }}>
+                      {/* Header Row */}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 60px 60px", gap: "8px", padding: "8px 0", borderBottom: "2px solid #e0e0e0", marginBottom: "4px", fontSize: "12px", fontWeight: "600", color: "#999" }}>
+                        <span>Exercise</span>
+                        <span style={{ textAlign: "center" }}>Sets x Reps</span>
+                        <span style={{ textAlign: "center" }}>KG</span>
+                      </div>
+                      
+                      {/* Exercises List */}
                       {customExercises.map((ex, idx) => (
-                        <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
-                          <span style={{ fontSize: 13 }}>
-                            {ex.name} {ex.sets && `• ${ex.sets}x${ex.reps || "?"}`} {ex.weight && `• ${ex.weight}kg`} {ex.focus && `• ${ex.focus}`}
+                        <div key={idx} style={{ display: "grid", gridTemplateColumns: "1fr 60px 60px", gap: "8px", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f0f0f0", fontSize: "13px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span>
+                              {ex.name}
+                              {ex.focus && <span style={{ fontSize: "11px", color: "#999", marginLeft: "4px" }}>• {ex.focus}</span>}
+                            </span>
+                            <button
+                              type="button"
+                              className="ghost"
+                              onClick={() => removeCustomExercise(idx)}
+                              style={{ fontSize: 12, padding: "2px 6px", marginLeft: "8px" }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <span style={{ textAlign: "center" }}>
+                            {ex.sets && ex.reps ? `${ex.sets}x${ex.reps}` : "-"}
                           </span>
-                          <button
-                            type="button"
-                            className="ghost"
-                            onClick={() => removeCustomExercise(idx)}
-                            style={{ fontSize: 12, padding: "4px 8px" }}
-                          >
-                            ลบ
-                          </button>
+                          <span style={{ textAlign: "center", fontWeight: "600" }}>
+                            {ex.weight ? `${ex.weight}kg` : "-"}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -568,30 +597,68 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
               </>
             ) : (
               <>
-                <select
-                  value={setChoice}
-                  onChange={(e) => handleSetChoiceChange(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>
-                    {t("setPlaceholder")}
-                  </option>
-                  {BUILT_IN_SETS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                  {customPresets.length > 0 && (
-                    <optgroup label={t("presetCustom")}>
-                      {customPresets.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  <option value="__custom__">{t("addCustomOption")}</option>
-                </select>
+                <div style={{ marginBottom: "16px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {/* Built-in sets */}
+                    {BUILT_IN_SETS.map((s) => (
+                      <label key={s} style={{ display: "flex", alignItems: "center", padding: "8px", background: setChoice === s ? "#f0f0f0" : "#fff", borderRadius: "6px", cursor: "pointer", border: "1px solid #e0e0e0" }}>
+                        <input
+                          type="radio"
+                          name="setChoice"
+                          value={s}
+                          checked={setChoice === s}
+                          onChange={(e) => handleSetChoiceChange(e.target.value)}
+                          style={{ marginRight: "8px" }}
+                        />
+                        <span style={{ flex: 1 }}>{s}</span>
+                      </label>
+                    ))}
+
+                    {/* Custom presets */}
+                    {customPresets.length > 0 && (
+                      <>
+                        <div style={{ fontSize: "12px", fontWeight: "600", color: "#999", marginTop: "8px" }}>
+                          {t("presetCustom")}
+                        </div>
+                        {customPresets.map((p) => {
+                          const totalWeight = p.exercises
+                            ?.reduce((sum, ex) => sum + (ex.weight || 0), 0) || 0;
+                          const weightText = totalWeight > 0 ? `${totalWeight}kg` : "N/A";
+                          
+                          return (
+                            <label key={p.id} style={{ display: "flex", alignItems: "center", padding: "8px", background: setChoice === p.id ? "#f0f0f0" : "#fff", borderRadius: "6px", cursor: "pointer", border: "1px solid #e0e0e0" }}>
+                              <input
+                                type="radio"
+                                name="setChoice"
+                                value={p.id}
+                                checked={setChoice === p.id}
+                                onChange={(e) => handleSetChoiceChange(e.target.value)}
+                                style={{ marginRight: "8px" }}
+                              />
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: "14px" }}>{p.name}</div>
+                                <div style={{ fontSize: "12px", color: "#999" }}>Total: {weightText}</div>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </>
+                    )}
+
+                    {/* Add custom option */}
+                    <label style={{ display: "flex", alignItems: "center", padding: "8px", background: setChoice === "__custom__" ? "#f0f0f0" : "#fff", borderRadius: "6px", cursor: "pointer", border: "1px solid #e0e0e0" }}>
+                      <input
+                        type="radio"
+                        name="setChoice"
+                        value="__custom__"
+                        checked={setChoice === "__custom__"}
+                        onChange={(e) => handleSetChoiceChange(e.target.value)}
+                        style={{ marginRight: "8px" }}
+                      />
+                      <span>{t("addCustomOption")}</span>
+                    </label>
+                  </div>
+                </div>
 
                 {setChoice && getExercisesForSetChoice(setChoice).length > 0 && (() => {
                   const exercises = getExercisesForSetChoice(setChoice);
@@ -621,7 +688,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
 
                       <div className="exercise-table no-check" style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(4, 1fr)",
+                        gridTemplateColumns: "1fr 60px 60px 40px",
                         gap: "12px",
                         wordBreak: "break-word",
                         whiteSpace: "normal"
@@ -631,14 +698,27 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                         <div className="col-head">{t("exSetsHead")}</div>
                         <div className="col-head">Weight</div>
 
-                        {exercises.map((ex, index) => (
-                          <Fragment key={`${ex.name}-${index}`}>
-                            <span style={{ wordBreak: "break-word" }}>{ex.name}</span>
-                            <span>{ex.reps || "-"}</span>
-                            <span>{ex.sets || "-"}</span>
-                            <span>{ex.weight ? `${ex.weight}kg` : "-"}</span>
-                          </Fragment>
-                        ))}
+                        {exercises.map((ex, index) => {
+                          const customWeight = sessionExercises[ex.name] || ex.weight;
+                          return (
+                            <Fragment key={`${ex.name}-${index}`}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ wordBreak: "break-word" }}>{ex.name}</span>
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => setEditingSessionExIdx(index)}
+                                  style={{ fontSize: "11px", padding: "2px 4px", marginLeft: "4px" }}
+                                >
+                                  ✏️
+                                </button>
+                              </div>
+                              <span>{ex.reps || "-"}</span>
+                              <span>{ex.sets || "-"}</span>
+                              <span>{customWeight ? `${customWeight}kg` : "-"}</span>
+                            </Fragment>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -740,9 +820,6 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                   <div className="col-head">
                     {t("exSetsHead")}
                   </div>
-                  {/* <div className="col-head">
-                    Focus
-                  </div> */}
 
                   {exercises.map((ex, i) => (
                     <Fragment key={`${ex.name}-${i}`}>
@@ -773,6 +850,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                           type="button"
                           onClick={() => {
                             setSelectedExerciseFocus(ex.focus || "Not specified");
+                            setSelectedExerciseWeight(ex.weight || null);
                             setShowFocusModal(true);
                           }}
                           style={{
@@ -842,14 +920,30 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
             textAlign: "center",
             boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)"
           }}>
-            <h3 style={{ marginTop: 0 }}>Focus Area</h3>
-            <p style={{ fontSize: "18px", fontWeight: "600", color: "#ff9500", margin: "16px 0" }}>
-              {selectedExerciseFocus}
-            </p>
+            <h3 style={{ marginTop: 0, marginBottom: "20px" }}>Exercise Info</h3>
+            
+            {/* Focus Area */}
+            <div style={{ marginBottom: "16px" }}>
+              <p style={{ fontSize: "12px", fontWeight: "600", color: "#666", margin: "0 0 8px 0" }}>Focus Area</p>
+              <p style={{ fontSize: "18px", fontWeight: "600", color: "#ff9500", margin: 0 }}>
+                {selectedExerciseFocus}
+              </p>
+            </div>
+
+            {/* Weight */}
+            {selectedExerciseWeight && (
+              <div style={{ marginBottom: "16px", paddingTop: "16px", borderTop: "1px solid #e0e0e0" }}>
+                <p style={{ fontSize: "12px", fontWeight: "600", color: "#666", margin: "0 0 8px 0" }}>Weight</p>
+                <p style={{ fontSize: "24px", fontWeight: "700", color: "#333", margin: 0 }}>
+                  {selectedExerciseWeight}kg
+                </p>
+              </div>
+            )}
+
             <button
               className="primary"
               onClick={() => setShowFocusModal(false)}
-              style={{ width: "100%", marginTop: "12px" }}
+              style={{ width: "100%", marginTop: "16px" }}
             >
               Close
             </button>
@@ -1047,7 +1141,107 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
             </div>
           </div>
         </div>
+      )}{/* Edit Preset Modal End */}
+
+      {/* Focus Info Modal */}
+      {showFocusModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: "#fff",
+            borderRadius: "12px",
+            padding: "24px",
+            maxWidth: "300px",
+            textAlign: "center",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)"
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: "20px" }}>Exercise Info</h3>
+            
+            <div style={{ marginBottom: "16px" }}>
+              <p style={{ fontSize: "12px", fontWeight: "600", color: "#666", margin: "0 0 8px 0" }}>Focus Area</p>
+              <p style={{ fontSize: "18px", fontWeight: "600", color: "#ff9500", margin: 0 }}>
+                {selectedExerciseFocus}
+              </p>
+            </div>
+
+            {selectedExerciseWeight && (
+              <div style={{ marginBottom: "16px", paddingTop: "16px", borderTop: "1px solid #e0e0e0" }}>
+                <p style={{ fontSize: "12px", fontWeight: "600", color: "#666", margin: "0 0 8px 0" }}>Weight</p>
+                <p style={{ fontSize: "24px", fontWeight: "700", color: "#333", margin: 0 }}>
+                  {selectedExerciseWeight}kg
+                </p>
+              </div>
+            )}
+
+            <button
+              className="primary"
+              onClick={() => setShowFocusModal(false)}
+              style={{ width: "100%", marginTop: "16px" }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
+
+      {/* Edit Exercise Weight Modal (Add Item) */}
+      {editingSessionExIdx !== null && setChoice && getExercisesForSetChoice(setChoice).length > 0 && (() => {
+        const exercises = getExercisesForSetChoice(setChoice);
+        const currentEx = exercises[editingSessionExIdx];
+        const currentWeight = sessionExercises[currentEx?.name] || currentEx?.weight || "";
+
+        return (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "flex-end",
+            zIndex: 1000
+          }}>
+            <div style={{
+              width: "100%",
+              background: "#fff",
+              borderRadius: "12px 12px 0 0",
+              padding: "20px",
+              maxHeight: "50vh",
+              overflowY: "auto"
+            }}>
+              <h3 style={{ marginTop: 0, marginBottom: "12px" }}>Edit Weight: {currentEx?.name}</h3>
+              
+              <input
+                type="number"
+                step="0.5"
+                value={currentWeight}
+                onChange={(e) => updateSessionExerciseWeight(currentEx?.name, e.target.value ? Number(e.target.value) : null)}
+                placeholder="Weight (kg)"
+                style={{ width: "100%", padding: "8px", marginBottom: "12px", boxSizing: "border-box", fontSize: "14px" }}
+              />
+              
+              <button
+                className="primary"
+                onClick={() => setEditingSessionExIdx(null)}
+                style={{ width: "100%" }}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }
