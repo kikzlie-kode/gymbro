@@ -1139,11 +1139,36 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
             background: "#fff",
             borderRadius: "12px 12px 0 0",
             padding: "20px",
-            maxHeight: "50vh",
+            maxHeight: "80vh",
             overflowY: "auto"
           }}>
-            <h3 style={{ marginTop: 0, marginBottom: "12px" }}>Edit: {editSessionExName}</h3>
+            <h3 style={{ marginTop: 0, marginBottom: "16px" }}>Edit Exercise</h3>
             
+            <input
+              type="text"
+              value={editSessionExName}
+              onChange={(e) => setEditSessionExName(e.target.value)}
+              placeholder="Exercise Name"
+              style={{ width: "100%", padding: "8px", marginBottom: "12px", boxSizing: "border-box", fontSize: "14px" }}
+            />
+            
+            <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+              <input
+                type="number"
+                value={editSessionExSets}
+                onChange={(e) => setEditSessionExSets(e.target.value)}
+                placeholder="Sets"
+                style={{ flex: 1, padding: "8px", boxSizing: "border-box", fontSize: "14px" }}
+              />
+              <input
+                type="number"
+                value={editSessionExReps}
+                onChange={(e) => setEditSessionExReps(e.target.value)}
+                placeholder="Reps"
+                style={{ flex: 1, padding: "8px", boxSizing: "border-box", fontSize: "14px" }}
+              />
+            </div>
+
             <input
               type="number"
               step="0.5"
