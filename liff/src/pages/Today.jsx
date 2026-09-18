@@ -43,6 +43,14 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
   const [selectedExerciseFocus, setSelectedExerciseFocus] = useState("");
   const [selectedExerciseWeight, setSelectedExerciseWeight] = useState(null);
 
+  // Edit exercise in add item session
+  const [editingSessionEx, setEditingSessionEx] = useState(null);
+  const [editSessionExName, setEditSessionExName] = useState("");
+  const [editSessionExSets, setEditSessionExSets] = useState("");
+  const [editSessionExReps, setEditSessionExReps] = useState("");
+  const [editSessionExWeight, setEditSessionExWeight] = useState("");
+  const [sessionExercises, setSessionExercises] = useState({});
+
   // เก็บรายละเอียด exercises ของแต่ละ todo
   const [todoExercises, setTodoExercises] = useState({});
 
@@ -88,10 +96,33 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
     setNewExerciseFocus("");
   }
 
-  // Load presets on mount
-  useEffect(() => {
-    reloadPresets();
-  }, []);
+  function openEditSessionEx(idx, ex) {
+    setEditingSessionEx(idx);
+    setEditSessionExName(ex.name);
+    setEditSessionExSets(ex.sets || "");
+    setEditSessionExReps(ex.reps || "");
+    setEditSessionExWeight(sessionExercises[ex.name] || ex.weight || "");
+  }
+
+  function closeEditSessionEx() {
+    setEditingSessionEx(null);
+    setEditSessionExName("");
+    setEditSessionExSets("");
+    setEditSessionExReps("");
+    setEditSessionExWeight("");
+  }
+
+  function saveEditSessionEx(oldName) {
+    if (!editSessionExName.trim()) return;
+    // Update sessionExercises weight
+    if (editSessionExWeight) {
+      setSessionExercises((prev) => ({
+        ...prev,
+        [editSessionExName]: Number(editSessionExWeight),
+      }));
+    }
+    closeEditSessionEx();
+  }
 
   function openEditPreset(preset) {
     setEditingPresetId(preset.id);
@@ -774,7 +805,7 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                           type="button"
                           onClick={() => {
                             setSelectedExerciseFocus(ex.focus || "Not specified");
-                            setSelectedExerciseWeight(ex.weight || null);
+                            setSelectedExerciseWeight(sessionExercises[ex.name] || ex.weight || null);
                             setShowFocusModal(true);
                           }}
                           style={{
@@ -794,9 +825,32 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
                             margin: "0",
                             background: "none",
                           }}
-                          aria-label="Show focus info"
+                          aria-label="Show info"
                         >
                           ℹ
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEditSessionEx(i, ex)}
+                          style={{
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            color: "#666",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: "20px",
+                            height: "20px",
+                            borderRadius: "3px",
+                            border: "1px solid #ddd",
+                            backgroundColor: "#f5f5f5",
+                            padding: "0",
+                            margin: "0",
+                            background: "none",
+                          }}
+                          aria-label="Edit"
+                        >
+                          ✏️
                         </button>
                       </span>
 
@@ -1058,6 +1112,58 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
               <button
                 className="ghost"
                 onClick={closeEditPreset}
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Exercise Weight Modal (Session) */}
+      {editingSessionEx !== null && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "flex-end",
+          zIndex: 1000
+        }}>
+          <div style={{
+            width: "100%",
+            background: "#fff",
+            borderRadius: "12px 12px 0 0",
+            padding: "20px",
+            maxHeight: "50vh",
+            overflowY: "auto"
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: "12px" }}>Edit: {editSessionExName}</h3>
+            
+            <input
+              type="number"
+              step="0.5"
+              value={editSessionExWeight}
+              onChange={(e) => setEditSessionExWeight(e.target.value)}
+              placeholder="Weight (kg)"
+              style={{ width: "100%", padding: "8px", marginBottom: "12px", boxSizing: "border-box", fontSize: "14px" }}
+            />
+            
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                className="primary"
+                onClick={() => saveEditSessionEx(editSessionExName)}
+                style={{ flex: 1 }}
+              >
+                Save
+              </button>
+              <button
+                className="ghost"
+                onClick={closeEditSessionEx}
                 style={{ flex: 1 }}
               >
                 Cancel
