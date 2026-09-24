@@ -56,6 +56,11 @@ export default function Today({ todos, reload, reloadLogs, reloadSummary, custom
 
   const { t, lang } = useSettings();
 
+  // Load presets on mount
+  useEffect(() => {
+    reloadPresets();
+  }, []);
+
   function setTitleMode(mode) {
     setTitleModeRaw(mode);
     setSetChoice("");
