@@ -84,16 +84,26 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        await liff.init({ liffId: LIFF_ID });
+        await liff.init({
+          liffId: LIFF_ID,
+          withLoginOnExternalBrowser: true,
+        });
+
         if (!liff.isLoggedIn()) {
-          liff.login();
+          setStatus("error");
+          setError("LINE login required");
           return;
         }
+
+        // อ่าน query parameter หลัง liff.init()
+        // เพราะ LIFF อาจ rewrite URL ระหว่าง initialization
         const params = new URLSearchParams(window.location.search);
         setInitialTodoId(params.get("todoId"));
+
         setStatus("ready");
       } catch (err) {
-        setError(err.message);
+        console.error("LIFF init failed:", err);
+        setError(err.message || String(err));
         setStatus("error");
       }
     })();
@@ -108,7 +118,6 @@ export default function App() {
         api.getLogs(),
         api.getMeals(),
         api.getProfile(),
-        // api.getSummary(30),
         api.getPresets(),
       ]);
       setTodos(todosRes);
